@@ -185,11 +185,18 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const addBoard = async (board: Omit<Board, "id" | "createdAt" | "columns" | "onboardedUsers">) => {
     try {
-      await fetch("/api/boards", {
+      const res = await fetch("/api/boards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(board),
       });
+      if (res.ok) {
+        const newBoard = await res.json();
+        setBoards((prev) => {
+          if (prev.some((b) => b.id === newBoard.id)) return prev;
+          return [...prev, newBoard];
+        });
+      }
     } catch (err) {
       console.error(err);
     }
@@ -197,11 +204,17 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const updateBoard = async (id: string, updates: Partial<Board>) => {
     try {
-      await fetch(`/api/boards/${id}`, {
+      const res = await fetch(`/api/boards/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
+      if (res.ok) {
+        const updatedBoard = await res.json();
+        setBoards((prev) =>
+          prev.map((b) => (b.id === id ? { ...b, ...updatedBoard } : b))
+        );
+      }
     } catch (err) {
       console.error(err);
     }
@@ -209,7 +222,10 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const deleteBoard = async (id: string) => {
     try {
-      await fetch(`/api/boards/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/boards/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setBoards((prev) => prev.filter((b) => b.id !== id));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -234,11 +250,23 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const addTask = async (boardId: string, task: any) => {
     try {
-      await fetch(`/api/boards/${boardId}/tasks`, {
+      const res = await fetch(`/api/boards/${boardId}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(task),
       });
+      if (res.ok) {
+        const newTask = await res.json();
+        setBoards((prev) => prev.map((b) => {
+          if (b.id !== boardId) return b;
+          const colHasTask = b.columns.some((col) => col.id === newTask.columnId && col.tasks.some((t) => t.id === newTask.id));
+          if (colHasTask) return b;
+          return {
+            ...b,
+            columns: b.columns.map((col) => col.id === newTask.columnId ? { ...col, tasks: [...col.tasks, newTask] } : col),
+          };
+        }));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -246,11 +274,21 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const updateTask = async (taskId: string, updates: any) => {
     try {
-      await fetch(`/api/tasks/${taskId}`, {
+      const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
+      if (res.ok) {
+        const updatedTask = await res.json();
+        setBoards((prev) => prev.map((b) => ({
+          ...b,
+          columns: b.columns.map((col) => ({
+            ...col,
+            tasks: col.tasks.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t)),
+          })),
+        })));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -258,7 +296,16 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const deleteTask = async (taskId: string) => {
     try {
-      await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+      const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+      if (res.ok) {
+        setBoards((prev) => prev.map((b) => ({
+          ...b,
+          columns: b.columns.map((col) => ({
+            ...col,
+            tasks: col.tasks.filter((t) => t.id !== taskId),
+          })),
+        })));
+      }
     } catch (err) {
       console.error(err);
     }
