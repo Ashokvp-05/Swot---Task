@@ -550,30 +550,46 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
       {/* ─── Create Modal ─── */}
       {showModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }} onClick={() => setShowModal(false)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 24, width: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16, color: "#111827", letterSpacing: "-0.02em" }}>New Task</h3>
-            <label style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Title</label>
-            <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="What needs to be done?"
-              style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", outline: "none", marginBottom: 14, color: "#111827" }}
-              onFocus={(e) => e.currentTarget.style.borderColor = "#6366f1"}
-              onBlur={(e) => e.currentTarget.style.borderColor = "#e5e7eb"}
-            />
-            <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 32, width: 550, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 24, color: "#111827", letterSpacing: "-0.02em" }}>New Task</h3>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Title</label>
+              <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="What needs to be done?"
+                style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", color: "#0f172a", boxSizing: "border-box" }}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#6366f1"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "#e2e8f0"}
+              />
+            </div>
+            
+            <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Assignee</label>
-                <select value={newAssignee} onChange={(e) => setNewAssignee(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", background: "#fff", color: "#111827" }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Assignee</label>
+                <select value={newAssignee} onChange={(e) => setNewAssignee(e.target.value)} 
+                  style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", background: "#fff", color: "#0f172a", outline: "none", cursor: "pointer", boxSizing: "border-box" }}>
                   <option value="">Select member</option>
                   {board.team.map((initials) => <option key={initials} value={initials}>{boardNameMap[initials]}</option>)}
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Due Date</label>
-                <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", background: "#fff", color: "#111827" }} />
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Due Date</label>
+                <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} 
+                  style={{ width: "100%", padding: "11px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", background: "#fff", color: "#0f172a", outline: "none", boxSizing: "border-box" }} />
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setShowModal(false)} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", color: "#6b7280" }}>Cancel</button>
-              <button onClick={handleAddTask} style={{ padding: "7px 14px", borderRadius: 6, border: "none", background: "#111827", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Create</button>
+            
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowModal(false)} 
+                style={{ padding: "12px 24px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#64748b", transition: "background 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                Cancel
+              </button>
+              <button onClick={handleAddTask} 
+                style={{ padding: "12px 28px", borderRadius: 8, border: "none", background: "#0f172a", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "background 0.2s", boxShadow: "0 4px 12px rgba(15, 23, 42, 0.15)" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#1e293b"}
+                onMouseLeave={e => e.currentTarget.style.background = "#0f172a"}>
+                Create
+              </button>
             </div>
           </div>
         </div>

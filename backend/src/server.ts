@@ -167,10 +167,11 @@ app.post("/api/boards", async (req, res) => {
         team,
         columns: {
           create: [
-            { title: "To Do", color: "#6b7280", order: 0 },
-            { title: "Ongoing", color: "#3b82f6", order: 1 },
-            { title: "Backlog testing", color: "#8b5cf6", order: 2 },
-            { title: "Hold on", color: "#ef4444", order: 3 },
+            { title: "Backlogs", color: "#ef4444", order: 0 },
+            { title: "Ongoing", color: "#22c55e", order: 1 },
+            { title: "Testing", color: "#f59e0b", order: 2 },
+            { title: "Hold", color: "#94a3b8", order: 3 },
+            { title: "Closed", color: "#10b981", order: 4 },
           ],
         },
       },
