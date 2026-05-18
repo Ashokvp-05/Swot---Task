@@ -1,14 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import io, { Socket } from "socket.io-client";
 
 /* ─── Types ─── */
 export type OnboardedUser = {
   id: string;
   name: string;
   email: string;
-  password: string;
-  role: "Manager" | "Employee";
+  password?: string;
+  role: "Manager" | "Employee" | "Admin";
   initials: string;
 };
 
@@ -56,94 +57,21 @@ export const memberNameMap: Record<string, string> = Object.fromEntries(
   allTeamMembers.map((m) => [m.initials, m.name])
 );
 
-function getInitials(name: string) {
-  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-}
-
-/* ─── Default Columns Template ─── */
-const defaultColumns = (): BoardColumn[] => [
-  { id: "backlog", title: "Backlog", color: "#a1a1aa", tasks: [] },
-  { id: "todo", title: "To Do", color: "#6b7280", tasks: [] },
-  { id: "progress", title: "In Progress", color: "#6366f1", tasks: [] },
-  { id: "review", title: "In Review", color: "#f59e0b", tasks: [] },
-  { id: "done", title: "Done", color: "#10b981", tasks: [] },
-];
-
-/* ─── Sample Boards ─── */
-const sampleBoards: Board[] = [
-  {
-    id: "board-eng",
-    name: "Engineering Team",
-    description: "Core product development sprint board",
-    color: "#6366f1",
-    team: ["JD", "MJ", "AW", "DK"],
-    onboardedUsers: [
-      { id: "ou1", name: "John Doe", email: "john@flowsync.com", password: "John@123", role: "Manager", initials: "JD" },
-      { id: "ou2", name: "Mike Johnson", email: "mike@flowsync.com", password: "Mike@123", role: "Employee", initials: "MJ" },
-      { id: "ou3", name: "Alex Wang", email: "alex@flowsync.com", password: "Alex@123", role: "Employee", initials: "AW" },
-      { id: "ou4", name: "David Kim", email: "david@flowsync.com", password: "David@123", role: "Employee", initials: "DK" },
-    ],
-    columns: [
-      { id: "backlog", title: "Backlog", color: "#a1a1aa", tasks: [
-        { id: "t15", title: "Explore analytics integration", priority: "Low", tag: "Research", tagColor: "#64748b", assignee: "MJ", startDate: "2026-05-20", endDate: "2026-05-28" },
-      ]},
-      { id: "todo", title: "To Do", color: "#6b7280", tasks: [
-        { id: "t1", title: "Setup CI/CD pipeline", priority: "Medium", tag: "DevOps", tagColor: "#f59e0b", assignee: "DK", startDate: "2026-05-14", endDate: "2026-05-20" },
-        { id: "t8", title: "Write API documentation", priority: "Low", tag: "Docs", tagColor: "#64748b", assignee: "JD", startDate: "2026-05-15", endDate: "2026-05-22" },
-      ]},
-      { id: "progress", title: "In Progress", color: "#6366f1", tasks: [
-        { id: "t3", title: "Implement user auth API", priority: "High", tag: "Backend", tagColor: "#10b981", assignee: "MJ", startDate: "2026-05-08", endDate: "2026-05-16" },
-        { id: "t4", title: "Create Kanban drag & drop", priority: "Urgent", tag: "Frontend", tagColor: "#6366f1", assignee: "AW", startDate: "2026-05-10", endDate: "2026-05-15" },
-      ]},
-      { id: "review", title: "In Review", color: "#f59e0b", tasks: [
-        { id: "t10", title: "Unit tests for auth", priority: "High", tag: "Testing", tagColor: "#14b8a6", assignee: "MJ", startDate: "2026-05-09", endDate: "2026-05-15" },
-      ]},
-      { id: "done", title: "Done", color: "#10b981", tasks: [
-        { id: "t6", title: "Project setup & config", priority: "Low", tag: "Setup", tagColor: "#64748b", assignee: "JD", startDate: "2026-05-01", endDate: "2026-05-05" },
-        { id: "t7", title: "Authentication UI", priority: "High", tag: "Frontend", tagColor: "#6366f1", assignee: "AW", startDate: "2026-05-03", endDate: "2026-05-10" },
-      ]},
-    ],
-    createdAt: "2026-05-01",
-  },
-  {
-    id: "board-design",
-    name: "Design Team",
-    description: "UI/UX design tasks and deliverables",
-    color: "#8b5cf6",
-    team: ["SK", "LR"],
-    onboardedUsers: [
-      { id: "ou5", name: "Sarah Kim", email: "sarah@flowsync.com", password: "Sarah@123", role: "Employee", initials: "SK" },
-      { id: "ou6", name: "Lisa Roberts", email: "lisa@flowsync.com", password: "Lisa@123", role: "Employee", initials: "LR" },
-    ],
-    columns: [
-      { id: "backlog", title: "Backlog", color: "#a1a1aa", tasks: [
-        { id: "t16", title: "Redesign onboarding flow", priority: "Medium", tag: "Design", tagColor: "#8b5cf6", assignee: "SK", startDate: "2026-05-22", endDate: "2026-05-30" },
-      ]},
-      { id: "todo", title: "To Do", color: "#6b7280", tasks: [
-        { id: "t11", title: "Design landing page mockup", priority: "High", tag: "Design", tagColor: "#8b5cf6", assignee: "SK", startDate: "2026-05-12", endDate: "2026-05-18" },
-        { id: "t12", title: "Define brand guidelines", priority: "Medium", tag: "Design", tagColor: "#8b5cf6", assignee: "LR", startDate: "2026-05-11", endDate: "2026-05-15" },
-      ]},
-      { id: "progress", title: "In Progress", color: "#6366f1", tasks: [] },
-      { id: "review", title: "In Review", color: "#f59e0b", tasks: [
-        { id: "t5", title: "Sprint planning module", priority: "Medium", tag: "Feature", tagColor: "#ec4899", assignee: "SK", startDate: "2026-05-05", endDate: "2026-05-14" },
-      ]},
-      { id: "done", title: "Done", color: "#10b981", tasks: [] },
-    ],
-    createdAt: "2026-05-03",
-  },
-];
-
 /* ─── Context ─── */
 type BoardContextType = {
   boards: Board[];
-  addBoard: (board: Omit<Board, "id" | "createdAt" | "columns">) => void;
+  addBoard: (board: Omit<Board, "id" | "createdAt" | "columns" | "onboardedUsers">) => void;
   updateBoard: (id: string, updates: Partial<Board>) => void;
   deleteBoard: (id: string) => void;
   getBoardById: (id: string) => Board | undefined;
   updateBoardColumns: (boardId: string, columns: BoardColumn[]) => void;
+  addTask: (boardId: string, task: any) => void;
+  updateTask: (taskId: string, updates: any) => void;
+  deleteTask: (taskId: string) => void;
   addOnboardedUser: (boardId: string, user: Omit<OnboardedUser, "id" | "initials">) => void;
   removeOnboardedUser: (boardId: string, userId: string) => void;
   getAllOnboardedUsers: () => (OnboardedUser & { boardId: string; boardName: string })[];
+  socket: Socket | null;
 };
 
 const BoardContext = createContext<BoardContextType>({
@@ -153,82 +81,93 @@ const BoardContext = createContext<BoardContextType>({
   deleteBoard: () => {},
   getBoardById: () => undefined,
   updateBoardColumns: () => {},
+  addTask: () => {},
+  updateTask: () => {},
+  deleteTask: () => {},
   addOnboardedUser: () => {},
   removeOnboardedUser: () => {},
   getAllOnboardedUsers: () => [],
+  socket: null,
 });
 
 export function BoardProvider({ children }: { children: ReactNode }) {
   const [boards, setBoards] = useState<Board[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
-  useEffect(() => {
+  const fetchBoards = useCallback(async () => {
     try {
-      const stored = sessionStorage.getItem("flowsync_boards");
-      if (stored) {
-        setBoards(JSON.parse(stored));
-      } else {
-        setBoards(sampleBoards);
+      const res = await fetch("/api/boards");
+      if (res.ok) {
+        const data = await res.json();
+        setBoards(data);
       }
-    } catch {
-      setBoards(sampleBoards);
+    } catch (error) {
+      console.error("Failed to fetch boards:", error);
     }
-    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (hydrated) {
-      sessionStorage.setItem("flowsync_boards", JSON.stringify(boards));
-    }
-  }, [boards, hydrated]);
+    fetchBoards();
 
-  const addBoard = (board: Omit<Board, "id" | "createdAt" | "columns">) => {
-    const newBoard: Board = {
-      ...board,
-      id: `board-${Date.now()}`,
-      columns: defaultColumns(),
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setBoards((prev) => [...prev, newBoard]);
-  };
+    const newSocket = io({ path: "/socket.io" });
+    setSocket(newSocket);
 
-  const updateBoard = (id: string, updates: Partial<Board>) => {
-    setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
-  };
+    newSocket.on("board:created", (board: Board) => {
+      setBoards((prev) => [...prev, board]);
+    });
 
-  const deleteBoard = (id: string) => {
-    setBoards((prev) => prev.filter((b) => b.id !== id));
-  };
+    newSocket.on("board:updated", (updatedBoard: Board) => {
+      setBoards((prev) => prev.map((b) => (b.id === updatedBoard.id ? { ...b, ...updatedBoard } : b)));
+    });
 
-  const getBoardById = (id: string) => boards.find((b) => b.id === id);
+    newSocket.on("board:deleted", (id: string) => {
+      setBoards((prev) => prev.filter((b) => b.id !== id));
+    });
 
-  const updateBoardColumns = (boardId: string, columns: BoardColumn[]) => {
-    setBoards((prev) => prev.map((b) => (b.id === boardId ? { ...b, columns } : b)));
-  };
+    newSocket.on("columns:updated", ({ boardId, columns }) => {
+      setBoards((prev) => prev.map((b) => (b.id === boardId ? { ...b, columns } : b)));
+    });
 
-  const addOnboardedUser = (boardId: string, user: Omit<OnboardedUser, "id" | "initials">) => {
-    const initials = getInitials(user.name);
-    const newUser: OnboardedUser = {
-      ...user,
-      id: `ou-${Date.now()}`,
-      initials,
-    };
-    setBoards((prev) =>
-      prev.map((b) =>
-        b.id === boardId
-          ? {
-              ...b,
-              onboardedUsers: [...b.onboardedUsers, newUser],
-              team: [...b.team, initials],
-            }
-          : b
-      )
-    );
-  };
+    newSocket.on("task:created", ({ boardId, task }) => {
+      setBoards((prev) => prev.map((b) => {
+        if (b.id !== boardId) return b;
+        return {
+          ...b,
+          columns: b.columns.map((col) => col.id === task.columnId ? { ...col, tasks: [...col.tasks, task] } : col),
+        };
+      }));
+    });
 
-  const removeOnboardedUser = (boardId: string, userId: string) => {
-    setBoards((prev) =>
-      prev.map((b) => {
+    newSocket.on("task:updated", (task) => {
+      setBoards((prev) => prev.map((b) => ({
+        ...b,
+        columns: b.columns.map((col) => ({
+          ...col,
+          tasks: col.tasks.map((t) => (t.id === task.id ? task : t)),
+        })),
+      })));
+    });
+
+    newSocket.on("task:deleted", ({ taskId, columnId }) => {
+      setBoards((prev) => prev.map((b) => ({
+        ...b,
+        columns: b.columns.map((col) => col.id === columnId ? { ...col, tasks: col.tasks.filter((t) => t.id !== taskId) } : col),
+      })));
+    });
+
+    newSocket.on("user:added", ({ boardId, user }) => {
+      setBoards((prev) => prev.map((b) => {
+        if (b.id !== boardId) return b;
+        return {
+          ...b,
+          onboardedUsers: [...b.onboardedUsers, user],
+          team: [...b.team, user.initials],
+        };
+      }));
+    });
+
+    newSocket.on("user:removed", ({ boardId, userId }) => {
+      setBoards((prev) => prev.map((b) => {
         if (b.id !== boardId) return b;
         const removedUser = b.onboardedUsers.find((u) => u.id === userId);
         return {
@@ -236,8 +175,113 @@ export function BoardProvider({ children }: { children: ReactNode }) {
           onboardedUsers: b.onboardedUsers.filter((u) => u.id !== userId),
           team: removedUser ? b.team.filter((t) => t !== removedUser.initials) : b.team,
         };
-      })
-    );
+      }));
+    });
+
+    return () => {
+      newSocket.close();
+    };
+  }, [fetchBoards]);
+
+  const addBoard = async (board: Omit<Board, "id" | "createdAt" | "columns" | "onboardedUsers">) => {
+    try {
+      await fetch("/api/boards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(board),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateBoard = async (id: string, updates: Partial<Board>) => {
+    try {
+      await fetch(`/api/boards/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteBoard = async (id: string) => {
+    try {
+      await fetch(`/api/boards/${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const getBoardById = (id: string) => boards.find((b) => b.id === id);
+
+  const updateBoardColumns = async (boardId: string, columns: BoardColumn[]) => {
+    // Optimistic update
+    setBoards((prev) => prev.map((b) => (b.id === boardId ? { ...b, columns } : b)));
+    try {
+      await fetch(`/api/boards/${boardId}/columns`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ columns }),
+      });
+    } catch (err) {
+      console.error(err);
+      fetchBoards(); // Revert on failure
+    }
+  };
+
+  const addTask = async (boardId: string, task: any) => {
+    try {
+      await fetch(`/api/boards/${boardId}/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(task),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateTask = async (taskId: string, updates: any) => {
+    try {
+      await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteTask = async (taskId: string) => {
+    try {
+      await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const addOnboardedUser = async (boardId: string, user: Omit<OnboardedUser, "id" | "initials">) => {
+    try {
+      await fetch(`/api/boards/${boardId}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const removeOnboardedUser = async (boardId: string, userId: string) => {
+    try {
+      await fetch(`/api/boards/${boardId}/users/${userId}`, { method: "DELETE" });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const getAllOnboardedUsers = () => {
@@ -250,11 +294,9 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     return all;
   };
 
-  if (!hydrated) return null;
-
   return (
     <BoardContext.Provider
-      value={{ boards, addBoard, updateBoard, deleteBoard, getBoardById, updateBoardColumns, addOnboardedUser, removeOnboardedUser, getAllOnboardedUsers }}
+      value={{ boards, addBoard, updateBoard, deleteBoard, getBoardById, updateBoardColumns, addTask, updateTask, deleteTask, addOnboardedUser, removeOnboardedUser, getAllOnboardedUsers, socket }}
     >
       {children}
     </BoardContext.Provider>

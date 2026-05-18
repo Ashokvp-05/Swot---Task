@@ -2,80 +2,47 @@
 
 import React, { useState } from "react";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
-import { useAuth, Role } from "@/context/AuthContext";
-import { useBoards } from "@/context/BoardContext";
-
-/* ─── Admin / System Users ─── */
-const systemUsers = [
-  { id: 1, name: "Ashok", username: "Ashok", password: "Swot@1234", role: "Admin" as Role, department: "Management" },
-];
-
-function getInitials(name: string) {
-  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-}
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const { getAllOnboardedUsers } = useBoards();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError("");
     if (!username.trim() || !password.trim()) {
       setError("Please enter both username and password");
       return;
     }
 
-    const input = username.trim().toLowerCase();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
-    // 1. Check system users (admin) — match by username
-    const systemMatch = systemUsers.find(
-      (u) => u.username.toLowerCase() === input && u.password === password
-    );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Invalid username or password");
+      }
 
-    if (systemMatch) {
-      setLoading(true);
+      const { user } = await res.json();
+      
+      // Add a small delay for smooth animation transition
       setTimeout(() => {
-        login({
-          id: systemMatch.id,
-          name: systemMatch.name,
-          username: systemMatch.username,
-          role: systemMatch.role,
-          department: systemMatch.department,
-          initials: getInitials(systemMatch.name),
-        });
-      }, 600);
-      return;
+        login(user);
+      }, 300);
+      
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.");
+      setLoading(false);
     }
-
-    // 2. Check onboarded users across all boards — match by email or name
-    const allOnboarded = getAllOnboardedUsers();
-    const onboardedMatch = allOnboarded.find(
-      (u) =>
-        (u.email.toLowerCase() === input || u.name.toLowerCase() === input) &&
-        u.password === password
-    );
-
-    if (onboardedMatch) {
-      setLoading(true);
-      setTimeout(() => {
-        login({
-          id: Date.now(),
-          name: onboardedMatch.name,
-          username: onboardedMatch.email,
-          role: onboardedMatch.role,
-          department: onboardedMatch.boardName,
-          initials: onboardedMatch.initials,
-        });
-      }, 600);
-      return;
-    }
-
-    setError("Invalid username or password");
   };
 
   return (

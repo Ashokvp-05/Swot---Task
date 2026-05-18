@@ -47,7 +47,7 @@ export default function BoardManagerView({ onOpenBoard }: { onOpenBoard: (id: st
 
   const handleCreate = () => {
     if (!name.trim()) return;
-    addBoard({ name, description, color, team: selectedTeam, onboardedUsers: [] });
+    addBoard({ name, description, color, team: selectedTeam });
     resetForm();
   };
 

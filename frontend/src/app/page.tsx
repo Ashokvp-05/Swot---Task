@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthProvider, useAuth, Role } from "@/context/AuthContext";
 import { BoardProvider, useBoards } from "@/context/BoardContext";
 import LoginPage from "@/components/LoginPage";
@@ -46,8 +46,11 @@ function AccessDenied() {
 function AppContent() {
   const { user, hasAccess } = useAuth();
   const { boards } = useBoards();
-  const [activeView, setActiveView] = useState(() => {
-    if (user?.role === "Employee") {
+  const [activeView, setActiveView] = useState("dashboard");
+
+  // Update activeView when user logs in and is an Employee
+  useEffect(() => {
+    if (user?.role === "Employee" && activeView === "dashboard") {
       const visibleBoards = boards.filter((b) => {
         const userInitials = user?.initials || "";
         const userName = user?.name?.toLowerCase() || "";
@@ -62,10 +65,14 @@ function AppContent() {
           )
         );
       });
-      if (visibleBoards.length > 0) return `board:${visibleBoards[0].id}`;
+      if (visibleBoards.length > 0) {
+        setActiveView(`board:${visibleBoards[0].id}`);
+      } else {
+        setActiveView("boards");
+      }
     }
-    return user?.role === "Employee" ? "boards" : "dashboard";
-  });
+  }, [user, boards, activeView]);
+
   const [collapsed, setCollapsed] = useState(false);
 
   if (!user) return <LoginPage />;
