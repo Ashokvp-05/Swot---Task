@@ -45,20 +45,20 @@ app.get("/health", (req, res) => {
 });
 
 // ─── AUTH ─────────────────────────────────────────────────────────────
-  app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const input = username.trim().toLowerCase();
-    console.log(`[LOGIN ATTEMPT] username: '${username}', password: '${password}', input: '${input}'`);
 
     // 1. Check System Users
     const systemUser = await prisma.systemUser.findFirst({
       where: {
         username: { equals: input, mode: "insensitive" },
+        password,
       },
     });
 
-    if (systemUser && systemUser.password.trim() === password.trim()) {
+    if (systemUser) {
       return res.json({
         user: {
           id: systemUser.id,
@@ -78,11 +78,12 @@ app.get("/health", (req, res) => {
           { email: { equals: input, mode: "insensitive" } },
           { name: { equals: input, mode: "insensitive" } },
         ],
+        password,
       },
       include: { board: true },
     });
 
-    if (boardUser && boardUser.password.trim() === password.trim()) {
+    if (boardUser) {
       return res.json({
         user: {
           id: boardUser.id,
@@ -168,8 +169,8 @@ app.post("/api/boards", async (req, res) => {
           create: [
             { title: "To Do", color: "#6b7280", order: 0 },
             { title: "Ongoing", color: "#3b82f6", order: 1 },
-            { title: "Review", color: "#f59e0b", order: 2 },
-            { title: "Done", color: "#10b981", order: 3 },
+            { title: "Backlog testing", color: "#8b5cf6", order: 2 },
+            { title: "Hold on", color: "#ef4444", order: 3 },
           ],
         },
       },

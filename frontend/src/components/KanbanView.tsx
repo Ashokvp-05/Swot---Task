@@ -16,11 +16,7 @@ const priorityConfig: Record<string, { color: string; label: string }> = {
   Low:    { color: "#94a3b8", label: "Low" },
 };
 
-const roleBadgeColors: Record<Role, { bg: string; color: string; border: string }> = {
-  Admin: { bg: "rgba(239,68,68,0.08)", color: "#dc2626", border: "rgba(239,68,68,0.2)" },
-  Manager: { bg: "rgba(245,158,11,0.08)", color: "#d97706", border: "rgba(245,158,11,0.2)" },
-  Employee: { bg: "rgba(16,185,129,0.08)", color: "#059669", border: "rgba(16,185,129,0.2)" },
-};
+
 
 function formatDate(d?: string) {
   if (!d) return "";
@@ -29,9 +25,9 @@ function formatDate(d?: string) {
 
 export default function KanbanView({ boardId, onBack }: { boardId: string; onBack: () => void }) {
   const { user, logout } = useAuth();
-  const { getBoardById, updateBoardColumns, addTask, updateTask, deleteTask } = useBoards();
+  const { getBoardById, updateBoardColumns, addTask, updateTask } = useBoards();
   const board = getBoardById(boardId);
-  const isAdmin = user?.role === "Admin";
+
   const isEmployee = user?.role === "Employee";
 
   const [draggedTask, setDraggedTask] = useState<{ taskId: string; fromCol: string } | null>(null);
@@ -49,35 +45,6 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
   const [filterMonth, setFilterMonth] = useState<Date | null>(null);
   const [showProfileView, setShowProfileView] = useState(false);
   const dragCloneRef = useRef<HTMLElement | null>(null);
-
-  if (!board) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 64px)", color: "#94a3b8" }}>
-        <p>Board not found</p>
-      </div>
-    );
-  }
-
-  const columns = board.columns;
-
-  // Board-specific team member name map
-  const boardNameMap: Record<string, string> = {};
-  board.team.forEach((initials) => {
-    const onboardedMatch = board.onboardedUsers?.find(u => u.initials === initials);
-    boardNameMap[initials] = onboardedMatch ? onboardedMatch.name : (memberNameMap[initials] || initials);
-  });
-
-  const setColumns = (updater: BoardColumn[] | ((prev: BoardColumn[]) => BoardColumn[])) => {
-    if (typeof updater === "function") {
-      updateBoardColumns(boardId, updater(board.columns));
-    } else {
-      updateBoardColumns(boardId, updater);
-    }
-  };
-
-  const handleTaskUpdate = (updated: Task) => {
-    updateTask(updated.id, updated);
-  };
 
   // --- Drag Handlers ---
   const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, taskId: string, fromCol: string) => {
@@ -113,6 +80,37 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
       el.classList.remove("kanban-column-dragover");
     });
   }, []);
+
+  if (!board) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 64px)", color: "#94a3b8" }}>
+        <p>Board not found</p>
+      </div>
+    );
+  }
+
+  const columns = board.columns;
+
+  // Board-specific team member name map
+  const boardNameMap: Record<string, string> = {};
+  board.team.forEach((initials) => {
+    const onboardedMatch = board.onboardedUsers?.find(u => u.initials === initials);
+    boardNameMap[initials] = onboardedMatch ? onboardedMatch.name : (memberNameMap[initials] || initials);
+  });
+
+  const setColumns = (updater: BoardColumn[] | ((prev: BoardColumn[]) => BoardColumn[])) => {
+    if (typeof updater === "function") {
+      updateBoardColumns(boardId, updater(board.columns));
+    } else {
+      updateBoardColumns(boardId, updater);
+    }
+  };
+
+  const handleTaskUpdate = (updated: Task) => {
+    updateTask(updated.id, updated);
+  };
+
+
 
   const handleDrop = (targetColId: string) => {
     if (!draggedTask || draggedTask.fromCol === targetColId) {
@@ -348,7 +346,238 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
         </div>
       )}
 
+      {/* ─── Toolbar ─── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Member Filter */}
+          <div style={{ position: "relative" }}>
+            <select value={selectedAssignee} onChange={(e) => setSelectedAssignee(e.target.value)}
+              style={{
+                padding: "7px 28px 7px 10px", borderRadius: 6,
+                border: "1px solid #e5e7eb", fontSize: 12, fontWeight: 500,
+                fontFamily: "inherit", background: "#fff", outline: "none",
+                color: "#374151", cursor: "pointer", appearance: "none",
+                minWidth: 140, letterSpacing: "-0.01em"
+              }}
+            >
+              <option value="">All Members</option>
+              {board.team.map((initials) => (
+                <option key={initials} value={initials}>{boardNameMap[initials]}</option>
+              ))}
+            </select>
+            <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#9ca3af" }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
 
+          {/* Divider */}
+          <div style={{ width: 1, height: 20, background: "#e5e7eb" }} />
+
+          {/* Date Filter Pills */}
+          <div style={{ display: "flex", alignItems: "center", gap: 2, background: "#f3f4f6", borderRadius: 8, padding: 3 }}>
+            {dateFilters.map((f) => (
+              <button key={f.id} onClick={() => setDateFilter(f.id)} style={s.filterBtn(dateFilter === f.id)}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: "#9ca3af", letterSpacing: "-0.01em" }}>
+            {totalTasks} tasks
+          </span>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 20, background: "#e5e7eb" }} />
+
+          {/* Month Filter */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <button
+              onClick={() => {
+                if (!filterMonth) { setFilterMonth(new Date()); return; }
+                const prev = new Date(filterMonth); prev.setMonth(prev.getMonth() - 1); setFilterMonth(prev);
+              }}
+              style={{ background: "none", border: "1px solid #e5e7eb", borderRadius: 6, padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center", color: "#6b7280", transition: "all 0.1s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#f9fafb"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "none"; }}
+            >
+              <ChevronLeft size={14} strokeWidth={1.5} />
+            </button>
+            <button
+              onClick={() => setFilterMonth(null)}
+              style={{
+                padding: "5px 14px", borderRadius: 6, border: "1px solid #e5e7eb",
+                fontSize: 12, fontWeight: 500, fontFamily: "inherit", cursor: "pointer",
+                background: filterMonth ? "#1e293b" : "#fff",
+                color: filterMonth ? "#fff" : "#374151",
+                minWidth: 110, textAlign: "center",
+                transition: "all 0.15s", letterSpacing: "-0.01em",
+              }}
+            >
+              {filterMonth
+                ? filterMonth.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+                : "All Months"
+              }
+            </button>
+            <button
+              onClick={() => {
+                if (!filterMonth) { setFilterMonth(new Date()); return; }
+                const next = new Date(filterMonth); next.setMonth(next.getMonth() + 1); setFilterMonth(next);
+              }}
+              style={{ background: "none", border: "1px solid #e5e7eb", borderRadius: 6, padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center", color: "#6b7280", transition: "all 0.1s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#f9fafb"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "none"; }}
+            >
+              <ChevronRight size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Board ─── */}
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns.length}, 1fr)`, gap: 12, height: "100%" }}>
+        {columns.map((col) => {
+          const filtered = col.tasks.filter(t => filterTask(t, col.id));
+          return (
+          <div key={col.id}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; e.currentTarget.classList.add("kanban-column-dragover"); }}
+            onDragLeave={(e) => { e.currentTarget.classList.remove("kanban-column-dragover"); }}
+            onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("kanban-column-dragover"); handleDrop(col.id); }}
+            style={{
+              background: "#fafafa",
+              borderRadius: 10,
+              display: "flex",
+              flexDirection: "column",
+              border: "1px solid #f0f0f0",
+              overflow: "hidden",
+              transition: "all 0.2s ease",
+            }}>
+            {/* Column Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 12px", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 12, height: 12, borderRadius: "50%", background: col.color }} />
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#111827", letterSpacing: "-0.01em" }}>{col.title}</span>
+                <span style={{ fontSize: 14, color: "#9ca3af", fontWeight: 600 }}>{filtered.length}</span>
+              </div>
+              <button
+                onClick={() => { setTargetColumnId(col.id); setShowModal(true); }}
+                style={{ background: "none", border: "none", borderRadius: 4, padding: 2, cursor: "pointer", color: "#9ca3af", display: "flex", alignItems: "center", transition: "color 0.1s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#374151"}
+                onMouseLeave={e => e.currentTarget.style.color = "#9ca3af"}
+              >
+                <Plus size={18} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            {/* Task Cards */}
+            <div className="custom-scrollbar" style={{
+              display: "flex", flexDirection: "column", gap: 6,
+              padding: "0 8px 12px",
+              flex: 1, overflowY: "auto", minHeight: 0
+            }}>
+              {filtered.map((task) => (
+                <div key={task.id} draggable
+                  className={`kanban-card${draggingTaskId === task.id ? " kanban-card-dragging" : ""}${landedTaskId === task.id ? " kanban-card-landed" : ""}`}
+                  onClick={() => setSelectedTask(task as Task)}
+                  onDragStart={(e) => handleDragStart(e, task.id, col.id)}
+                  onDragEnd={handleDragEnd}
+                  style={{
+                    background: "#fff", borderRadius: 8, padding: "10px 12px",
+                    border: "1px solid #e5e7eb", cursor: "grab",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.03)", flexShrink: 0,
+                  }}
+                >
+                  {/* Title Row */}
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                    <div style={{
+                      width: 7, height: 7, borderRadius: "50%", flexShrink: 0, marginTop: 4,
+                      background: priorityConfig[task.priority]?.color || "#94a3b8",
+                    }} title={task.priority} />
+                    <p style={{
+                      fontSize: 13, fontWeight: 500, color: "#111827", lineHeight: 1.4,
+                      letterSpacing: "-0.01em",
+                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                      overflow: "hidden", overflowWrap: "anywhere", wordBreak: "break-word",
+                      margin: 0,
+                    }} title={task.title}>{task.title}</p>
+                  </div>
+
+                  {/* Meta Row */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {/* Assignee */}
+                      {task.assignee && (() => {
+                        const colors: Record<string, string> = {
+                          JD: "#374151", SK: "#1e3a5f", MJ: "#1e293b",
+                          AW: "#3730a3", LR: "#831843", DK: "#164e63",
+                        };
+                        return (
+                          <div style={{
+                            width: 20, height: 20, borderRadius: "50%",
+                            background: colors[task.assignee] || "#6b7280",
+                            color: "#fff", fontSize: 8, fontWeight: 700,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            letterSpacing: "0.02em",
+                          }}>{task.assignee}</div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Date */}
+                    {(task.startDate || task.endDate) && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>
+                        <Calendar size={10} strokeWidth={2} />
+                        <span>{formatDate(task.endDate)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          );
+        })}
+        </div>
+      </div>
+
+      {/* ─── Task Detail Modal ─── */}
+      {selectedTask && (
+        <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={handleTaskUpdate} />
+      )}
+
+      {/* ─── Create Modal ─── */}
+      {showModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }} onClick={() => setShowModal(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 24, width: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16, color: "#111827", letterSpacing: "-0.02em" }}>New Task</h3>
+            <label style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Title</label>
+            <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="What needs to be done?"
+              style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", outline: "none", marginBottom: 14, color: "#111827" }}
+              onFocus={(e) => e.currentTarget.style.borderColor = "#6366f1"}
+              onBlur={(e) => e.currentTarget.style.borderColor = "#e5e7eb"}
+            />
+            <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Assignee</label>
+                <select value={newAssignee} onChange={(e) => setNewAssignee(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", background: "#fff", color: "#111827" }}>
+                  <option value="">Select member</option>
+                  {board.team.map((initials) => <option key={initials} value={initials}>{boardNameMap[initials]}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Due Date</label>
+                <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", background: "#fff", color: "#111827" }} />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowModal(false)} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", color: "#6b7280" }}>Cancel</button>
+              <button onClick={handleAddTask} style={{ padding: "7px 14px", borderRadius: 6, border: "none", background: "#111827", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Create</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* ─── Profile Modal ─── */}
       {showProfileView && user && (
         <div style={{
