@@ -313,11 +313,20 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const addOnboardedUser = async (boardId: string, user: Omit<OnboardedUser, "id" | "initials">) => {
     try {
-      await fetch(`/api/boards/${boardId}/users`, {
+      const res = await fetch(`/api/boards/${boardId}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),
       });
+      if (res.ok) {
+        const newUser = await res.json();
+        setBoards((prev) => prev.map((b) => {
+          if (b.id !== boardId) return b;
+          if (b.onboardedUsers.some((u) => u.id === newUser.id)) return b;
+          const updatedTeam = b.team.includes(newUser.initials) ? b.team : [...b.team, newUser.initials];
+          return { ...b, team: updatedTeam, onboardedUsers: [...b.onboardedUsers, newUser] };
+        }));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -325,7 +334,19 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const removeOnboardedUser = async (boardId: string, userId: string) => {
     try {
-      await fetch(`/api/boards/${boardId}/users/${userId}`, { method: "DELETE" });
+      const res = await fetch(`/api/boards/${boardId}/users/${userId}`, { method: "DELETE" });
+      if (res.ok) {
+        setBoards((prev) => prev.map((b) => {
+          if (b.id !== boardId) return b;
+          const userToRemove = b.onboardedUsers.find((u) => u.id === userId);
+          if (!userToRemove) return b;
+          return {
+            ...b,
+            team: b.team.filter((initials) => initials !== userToRemove.initials),
+            onboardedUsers: b.onboardedUsers.filter((u) => u.id !== userId),
+          };
+        }));
+      }
     } catch (err) {
       console.error(err);
     }
