@@ -45,20 +45,20 @@ app.get("/health", (req, res) => {
 });
 
 // ─── AUTH ─────────────────────────────────────────────────────────────
-app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const input = username.trim().toLowerCase();
+    console.log(`[LOGIN ATTEMPT] username: '${username}', password: '${password}', input: '${input}'`);
 
     // 1. Check System Users
     const systemUser = await prisma.systemUser.findFirst({
       where: {
         username: { equals: input, mode: "insensitive" },
-        password,
       },
     });
 
-    if (systemUser) {
+    if (systemUser && systemUser.password.trim() === password.trim()) {
       return res.json({
         user: {
           id: systemUser.id,
@@ -78,12 +78,11 @@ app.post("/api/auth/login", async (req, res) => {
           { email: { equals: input, mode: "insensitive" } },
           { name: { equals: input, mode: "insensitive" } },
         ],
-        password,
       },
       include: { board: true },
     });
 
-    if (boardUser) {
+    if (boardUser && boardUser.password.trim() === password.trim()) {
       return res.json({
         user: {
           id: boardUser.id,

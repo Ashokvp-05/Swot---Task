@@ -28,7 +28,7 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
 
   const handleAdd = () => {
     if (!name.trim() || !email.trim() || !password.trim()) return;
-    addOnboardedUser(boardId, { name: name.trim(), email: email.trim(), password, role });
+    addOnboardedUser(boardId, { name: name.trim(), email: email.trim(), password: password.trim(), role });
     setName(""); setEmail(""); setPassword(""); setRole("Employee"); setShowForm(false); setShowPwd(false);
   };
 
