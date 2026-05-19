@@ -52,6 +52,15 @@ function AppContent() {
     if (user) {
       if (user.role === "Employee") {
         if (activeView === "dashboard" || activeView === "boards") {
+          // Use boardId from login response if available (direct match)
+          if (user.boardId) {
+            const boardExists = boards.find((b) => b.id === user.boardId);
+            if (boardExists) {
+              setActiveView(`board:${user.boardId}`);
+              return;
+            }
+          }
+          // Fallback: search by initials/name/email
           const visibleBoards = boards.filter((b) => {
             const userInitials = user?.initials || "";
             const userName = user?.name?.toLowerCase() || "";

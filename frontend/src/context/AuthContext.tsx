@@ -11,6 +11,7 @@ export type User = {
   role: Role;
   department: string;
   initials: string;
+  boardId?: string;
 };
 
 type AuthContextType = {

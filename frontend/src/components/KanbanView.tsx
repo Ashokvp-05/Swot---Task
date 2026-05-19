@@ -90,14 +90,18 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
     );
   }
 
-  const columns = board.columns;
+  // Build complete team list from board.team + onboardedUsers (deduplicated)
+  const allInitials = new Set<string>(board.team);
+  board.onboardedUsers?.forEach(u => allInitials.add(u.initials));
+  const fullTeam = Array.from(allInitials);
 
-  // Board-specific team member name map
   const boardNameMap: Record<string, string> = {};
-  board.team.forEach((initials) => {
+  fullTeam.forEach((initials) => {
     const onboardedMatch = board.onboardedUsers?.find(u => u.initials === initials);
     boardNameMap[initials] = onboardedMatch ? onboardedMatch.name : (memberNameMap[initials] || initials);
   });
+
+  const columns = board.columns;
 
   const setColumns = (updater: BoardColumn[] | ((prev: BoardColumn[]) => BoardColumn[])) => {
     if (typeof updater === "function") {
@@ -139,7 +143,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
     addTask(boardId, {
       title: newTitle,
       priority: "Medium",
-      assignee: newAssignee || board.team[0] || "",
+      assignee: newAssignee || fullTeam[0] || "",
       startDate: newStartDate,
       endDate: newDueDate,
       columnId: targetColumnId,
@@ -364,7 +368,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
               }}
             >
               <option value="">All Members</option>
-              {board.team.map((initials) => (
+              {fullTeam.map((initials) => (
                 <option key={initials} value={initials}>{boardNameMap[initials]}</option>
               ))}
             </select>
@@ -556,7 +560,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
           task={selectedTask} 
           onClose={() => setSelectedTask(null)} 
           onUpdate={handleTaskUpdate} 
-          teamMembers={board.team.map(initials => ({ initials, name: boardNameMap[initials] }))}
+          teamMembers={fullTeam.map(initials => ({ initials, name: boardNameMap[initials] }))}
           columns={board.columns.map(c => ({ id: c.id, title: c.title }))}
         />
       )}
@@ -581,7 +585,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                 <select value={newAssignee} onChange={(e) => setNewAssignee(e.target.value)} 
                   style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", background: "#fff", color: "#0f172a", outline: "none", cursor: "pointer", boxSizing: "border-box" }}>
                   <option value="">Select member</option>
-                  {board.team.map((initials) => <option key={initials} value={initials}>{boardNameMap[initials]}</option>)}
+                  {fullTeam.map((initials) => <option key={initials} value={initials}>{boardNameMap[initials]}</option>)}
                 </select>
               </div>
               <div>

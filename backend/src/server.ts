@@ -92,6 +92,7 @@ app.post("/api/auth/login", async (req, res) => {
           role: boardUser.role,
           department: boardUser.board.name,
           initials: boardUser.initials,
+          boardId: boardUser.boardId,
         },
       });
     }
