@@ -226,8 +226,21 @@ app.delete("/api/boards/:id", async (req, res) => {
 app.post("/api/boards/:boardId/users", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-    const initials = name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+    let initials = name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+    if (initials.length === 1 && name.length > 1) {
+      initials = name.slice(0, 2).toUpperCase();
+    }
     
+    const board = await prisma.board.findUnique({ where: { id: req.params.boardId }, include: { users: true } });
+    if (board) {
+      let baseInitials = initials;
+      let counter = 1;
+      while (board.users.some((u: any) => u.initials === initials)) {
+        initials = `${baseInitials}${counter}`;
+        counter++;
+      }
+    }
+
     // Create the user
     const user = await prisma.boardUser.create({
       data: {
@@ -241,7 +254,6 @@ app.post("/api/boards/:boardId/users", async (req, res) => {
     });
 
     // Update the board's team array so the user persists in UI after refresh
-    const board = await prisma.board.findUnique({ where: { id: req.params.boardId } });
     if (board && !board.team.includes(initials)) {
       await prisma.board.update({
         where: { id: req.params.boardId },
@@ -475,11 +487,84 @@ async function migrateDatabaseColumns() {
   }
 }
 
+async function migrateUserInitials() {
+  console.log("Starting user initials deduplication...");
+  try {
+    const boards = await prisma.board.findMany({
+      include: { users: true },
+    });
+
+    for (const board of boards) {
+      const initialsSet = new Set<string>();
+      let changed = false;
+
+      for (const user of board.users) {
+        let currentInitials = user.initials;
+        
+        if (initialsSet.has(currentInitials)) {
+          changed = true;
+          let base = currentInitials;
+          let newInitials = base;
+          
+          if (base.length === 1 && user.name.length > 1) {
+            newInitials = user.name.slice(0, 2).toUpperCase();
+          }
+          
+          let counter = 1;
+          while (initialsSet.has(newInitials) || board.users.some(u => u.id !== user.id && u.initials === newInitials)) {
+            newInitials = `${base}${counter}`;
+            counter++;
+          }
+          
+          console.log(`Updating initials for ${user.name} from ${currentInitials} to ${newInitials}`);
+          
+          await prisma.boardUser.update({
+            where: { id: user.id },
+            data: { initials: newInitials },
+          });
+          
+          currentInitials = newInitials;
+        }
+        
+        initialsSet.add(currentInitials);
+      }
+      
+      if (changed) {
+        // Also ensure board team array is synced with the users' new initials
+        // Plus any legacy initials already in board.team that we shouldn't drop
+        const newTeamArray = new Set<string>(board.team);
+        for (const user of board.users) {
+           // We'll rebuild the team array ensuring all users are included
+           // Note: we don't know which old initials in board.team belonged to this user,
+           // so we just add the new initials.
+           newTeamArray.add(user.initials); // wait, user.initials might be outdated in this object if we just updated DB
+        }
+        
+        // Fetch fresh users to build correct team array
+        const freshUsers = await prisma.boardUser.findMany({ where: { boardId: board.id } });
+        const finalTeam = new Set<string>();
+        // Add legacy initials from board.team if they are NOT matching any user's old duplicate initials
+        // To be safe, just add all fresh user initials.
+        freshUsers.forEach(u => finalTeam.add(u.initials));
+        
+        await prisma.board.update({
+          where: { id: board.id },
+          data: { team: Array.from(finalTeam) },
+        });
+      }
+    }
+    console.log("User initials deduplication finished.");
+  } catch (err) {
+    console.error("User initials migration failed:", err);
+  }
+}
+
 const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   await migrateDatabaseColumns();
+  await migrateUserInitials();
 });
 
 // Graceful shutdown handling
