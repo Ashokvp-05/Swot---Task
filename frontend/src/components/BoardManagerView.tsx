@@ -141,14 +141,6 @@ export default function BoardManagerView({ onOpenBoard }: { onOpenBoard: (id: st
                       >
                         <Edit3 size={14} />
                       </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); if (confirm("Delete this board?")) deleteBoard(board.id); }}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6, color: "#94a3b8", display: "flex", transition: "color 0.1s" }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = "#ef4444"}
-                        onMouseLeave={(e) => e.currentTarget.style.color = "#94a3b8"}
-                      >
-                        <Trash2 size={14} />
-                      </button>
                     </div>
                   )}
                 </div>
