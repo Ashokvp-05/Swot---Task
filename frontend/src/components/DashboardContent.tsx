@@ -171,12 +171,12 @@ export default function DashboardContent() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={columnData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
                 <Tooltip 
                   cursor={{ fill: "#f8fafc" }}
                   contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", fontSize: 13, fontWeight: 600 }}
                 />
-                <Bar dataKey="tasks" fill="#4f46e5" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="tasks" fill="#4f46e5" radius={[6, 6, 0, 0]} maxBarSize={60}>
                   {columnData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
