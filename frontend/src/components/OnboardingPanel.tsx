@@ -26,11 +26,14 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
 
   const users = board.onboardedUsers;
 
+  const [successMsg, setSuccessMsg] = useState("");
+
   const handleAdd = async () => {
     if (!name.trim() || !email.trim() || !password.trim()) return;
     await addOnboardedUser(boardId, { name: name.trim(), email: email.trim(), password, role });
     setName(""); setEmail(""); setPassword(""); setRole("Employee"); setShowForm(false); setShowPwd(false);
-    alert("User added successfully!");
+    setSuccessMsg("User added successfully!");
+    setTimeout(() => setSuccessMsg(""), 3500);
   };
 
   const togglePwdVisibility = (userId: string) => {
@@ -38,13 +41,36 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
   };
 
   return (
-    <div style={{
-      background: "#fff",
-      border: "1px solid #e5e7eb",
-      borderRadius: 12, marginBottom: 16,
-      transition: "all 0.3s ease",
-      overflow: "hidden",
-    }}>
+    <>
+      {successMsg && (
+        <div style={{
+          position: "fixed",
+          bottom: 32,
+          left: 32,
+          background: "#10b981",
+          color: "#fff",
+          padding: "14px 24px",
+          borderRadius: "12px",
+          fontWeight: 600,
+          fontSize: 14,
+          boxShadow: "0 10px 25px rgba(16, 185, 129, 0.4)",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          animation: "fadeIn 0.3s ease"
+        }}>
+          <CheckCircle2 size={18} />
+          {successMsg}
+        </div>
+      )}
+      <div style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: 12, marginBottom: 16,
+        transition: "all 0.3s ease",
+        overflow: "hidden",
+      }}>
       {/* Header */}
       <div
         style={{
@@ -302,6 +328,7 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
