@@ -40,6 +40,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
   const [newAssignee, setNewAssignee] = useState("");
   const [selectedAssignee, setSelectedAssignee] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
+  const [newStartDate, setNewStartDate] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filterMonth, setFilterMonth] = useState<Date | null>(null);
@@ -139,10 +140,11 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
       title: newTitle,
       priority: "Medium",
       assignee: newAssignee || board.team[0] || "",
+      startDate: newStartDate,
       endDate: newDueDate,
       columnId: targetColumnId,
     });
-    setNewTitle(""); setNewDueDate(""); setNewAssignee(""); setShowModal(false);
+    setNewTitle(""); setNewStartDate(""); setNewDueDate(""); setNewAssignee(""); setShowModal(false);
   };
 
   const filterTask = (t: BoardTask, colId: string) => {
@@ -570,8 +572,8 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
               />
             </div>
             
-            <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
-              <div style={{ flex: 1 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 32 }}>
+              <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Assignee</label>
                 <select value={newAssignee} onChange={(e) => setNewAssignee(e.target.value)} 
                   style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", background: "#fff", color: "#0f172a", outline: "none", cursor: "pointer", boxSizing: "border-box" }}>
@@ -579,7 +581,12 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                   {board.team.map((initials) => <option key={initials} value={initials}>{boardNameMap[initials]}</option>)}
                 </select>
               </div>
-              <div style={{ flex: 1 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Start Date</label>
+                <input type="date" value={newStartDate} onChange={(e) => setNewStartDate(e.target.value)} 
+                  style={{ width: "100%", padding: "11px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", background: "#fff", color: "#0f172a", outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Due Date</label>
                 <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} 
                   style={{ width: "100%", padding: "11px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", background: "#fff", color: "#0f172a", outline: "none", boxSizing: "border-box" }} />
