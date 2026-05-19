@@ -88,18 +88,6 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
       {/* Body */}
       {!collapsed && (
         <div style={{ padding: "12px 20px 16px" }}>
-          {/* Success Message */}
-          {successMsg && (
-            <div style={{
-              background: "#dcfce7", color: "#166534", padding: "10px 14px",
-              borderRadius: 8, fontSize: 13, fontWeight: 600, marginBottom: 16,
-              display: "flex", alignItems: "center", gap: 8,
-              border: "1px solid #bbf7d0"
-            }}>
-              {successMsg}
-            </div>
-          )}
-
           {/* User Table */}
           {users.length > 0 && (
             <div style={{ marginBottom: showForm ? 16 : 0 }}>
