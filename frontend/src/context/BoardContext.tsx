@@ -139,13 +139,34 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     });
 
     newSocket.on("task:updated", (task) => {
-      setBoards((prev) => prev.map((b) => ({
-        ...b,
-        columns: b.columns.map((col) => ({
-          ...col,
-          tasks: col.tasks.map((t) => (t.id === task.id ? task : t)),
-        })),
-      })));
+      setBoards((prev) => prev.map((b) => {
+        const hasColumn = b.columns.some(col => col.id === task.columnId);
+        if (!hasColumn) {
+          const wasOnBoard = b.columns.some(col => col.tasks.some(t => t.id === task.id));
+          if (wasOnBoard) {
+            return {
+              ...b,
+              columns: b.columns.map(col => ({ ...col, tasks: col.tasks.filter(t => t.id !== task.id) }))
+            };
+          }
+          return b;
+        }
+
+        return {
+          ...b,
+          columns: b.columns.map((col) => {
+            let tasks = col.tasks.filter((t) => t.id !== task.id);
+            if (col.id === task.columnId) {
+              if (col.tasks.some((t) => t.id === task.id)) {
+                tasks = col.tasks.map((t) => (t.id === task.id ? task : t));
+              } else {
+                tasks = [...tasks, task];
+              }
+            }
+            return { ...col, tasks };
+          }),
+        };
+      }));
     });
 
     newSocket.on("task:deleted", ({ taskId, columnId }) => {
@@ -281,13 +302,34 @@ export function BoardProvider({ children }: { children: ReactNode }) {
       });
       if (res.ok) {
         const updatedTask = await res.json();
-        setBoards((prev) => prev.map((b) => ({
-          ...b,
-          columns: b.columns.map((col) => ({
-            ...col,
-            tasks: col.tasks.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t)),
-          })),
-        })));
+        setBoards((prev) => prev.map((b) => {
+          const hasColumn = b.columns.some(col => col.id === updatedTask.columnId);
+          if (!hasColumn) {
+            const wasOnBoard = b.columns.some(col => col.tasks.some(t => t.id === taskId));
+            if (wasOnBoard) {
+              return {
+                ...b,
+                columns: b.columns.map(col => ({ ...col, tasks: col.tasks.filter(t => t.id !== taskId) }))
+              };
+            }
+            return b;
+          }
+
+          return {
+            ...b,
+            columns: b.columns.map((col) => {
+              let tasks = col.tasks.filter((t) => t.id !== taskId);
+              if (col.id === updatedTask.columnId) {
+                if (col.tasks.some((t) => t.id === taskId)) {
+                  tasks = col.tasks.map((t) => (t.id === taskId ? updatedTask : t));
+                } else {
+                  tasks = [...tasks, updatedTask];
+                }
+              }
+              return { ...col, tasks };
+            }),
+          };
+        }));
       }
     } catch (err) {
       console.error(err);

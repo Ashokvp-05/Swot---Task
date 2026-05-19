@@ -46,7 +46,7 @@ export default function DashboardContent() {
   boards.forEach(b => {
     b.onboardedUsers.forEach(u => uniqueMembers.add(u.id));
     b.columns.forEach(col => {
-      const isDone = col.title.toLowerCase().includes("done") || col.title.toLowerCase().includes("complete");
+      const isDone = col.title.toLowerCase().includes("done") || col.title.toLowerCase().includes("complete") || col.title.toLowerCase() === "closed";
       
       let tasksInColumn = 0;
       col.tasks.forEach(t => {

@@ -40,8 +40,8 @@ async function main() {
       columns: {
         create: [
           {
-            title: "Backlog",
-            color: "#6b7280",
+            title: "Backlogs",
+            color: "#ef4444",
             order: 0,
             tasks: {
               create: [
@@ -61,8 +61,8 @@ async function main() {
             },
           },
           {
-            title: "To Do",
-            color: "#3b82f6",
+            title: "Ongoing",
+            color: "#22c55e",
             order: 1,
             tasks: {
               create: [
@@ -81,28 +81,19 @@ async function main() {
                     ],
                   },
                 },
-              ],
-            },
-          },
-          {
-            title: "In Progress",
-            color: "#f59e0b",
-            order: 2,
-            tasks: {
-              create: [
                 {
                   title: "Fix navigation bug on mobile devices",
                   priority: "Urgent",
                   assignee: "JD",
-                  order: 0,
+                  order: 1,
                 },
               ],
             },
           },
           {
-            title: "In Review",
-            color: "#8b5cf6",
-            order: 3,
+            title: "Testing",
+            color: "#f59e0b",
+            order: 2,
             tasks: {
               create: [
                 {
@@ -115,7 +106,15 @@ async function main() {
             },
           },
           {
-            title: "Done",
+            title: "Hold",
+            color: "#94a3b8",
+            order: 3,
+            tasks: {
+              create: [],
+            },
+          },
+          {
+            title: "Closed",
             color: "#10b981",
             order: 4,
             tasks: {
@@ -161,8 +160,8 @@ async function main() {
       columns: {
         create: [
           {
-            title: "Ideas",
-            color: "#6b7280",
+            title: "Backlogs",
+            color: "#ef4444",
             order: 0,
             tasks: {
               create: [
@@ -171,8 +170,8 @@ async function main() {
             },
           },
           {
-            title: "Wireframes",
-            color: "#f59e0b",
+            title: "Ongoing",
+            color: "#22c55e",
             order: 1,
             tasks: {
               create: [
@@ -181,8 +180,8 @@ async function main() {
             },
           },
           {
-            title: "Mockups",
-            color: "#ec4899",
+            title: "Testing",
+            color: "#f59e0b",
             order: 2,
             tasks: {
               create: [
@@ -191,13 +190,21 @@ async function main() {
             },
           },
           {
-            title: "Handoff",
-            color: "#10b981",
+            title: "Hold",
+            color: "#94a3b8",
             order: 3,
             tasks: {
               create: [
                 { title: "Settings page design specs", priority: "Low", assignee: "SK", order: 0 },
               ],
+            },
+          },
+          {
+            title: "Closed",
+            color: "#10b981",
+            order: 4,
+            tasks: {
+              create: [],
             },
           },
         ],

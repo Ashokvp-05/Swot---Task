@@ -340,7 +340,7 @@ app.post("/api/boards/:boardId/tasks", async (req, res) => {
 
 app.patch("/api/tasks/:id", async (req, res) => {
   try {
-    const { title, priority, assignee, startDate, endDate, todos } = req.body;
+    const { title, priority, assignee, startDate, endDate, columnId, todos } = req.body;
     
     // Process todos: delete all and recreate for simplicity
     if (todos) {
@@ -355,6 +355,7 @@ app.patch("/api/tasks/:id", async (req, res) => {
         assignee,
         startDate,
         endDate,
+        columnId,
         ...(todos ? {
           todos: {
             create: todos.map((t: any) => ({ text: t.text, done: t.done }))
@@ -383,10 +384,101 @@ app.delete("/api/tasks/:id", async (req, res) => {
   }
 });
 
+const standardColumns = [
+  { title: "Backlogs", color: "#ef4444", order: 0 },
+  { title: "Ongoing", color: "#22c55e", order: 1 },
+  { title: "Testing", color: "#f59e0b", order: 2 },
+  { title: "Hold", color: "#94a3b8", order: 3 },
+  { title: "Closed", color: "#10b981", order: 4 },
+];
+
+function getStandardColumnName(oldTitle: string): string {
+  const t = oldTitle.toLowerCase().trim();
+  if (t === "backlog" || t === "ideas" || t === "backlogs") return "Backlogs";
+  if (t === "to do" || t === "todo" || t === "in progress" || t === "ongoing" || t === "wireframes") return "Ongoing";
+  if (t === "in review" || t === "review" || t === "mockups" || t === "testing") return "Testing";
+  if (t === "handoff" || t === "hold") return "Hold";
+  if (t === "done" || t === "completed" || t === "closed") return "Closed";
+  return "Ongoing";
+}
+
+async function migrateDatabaseColumns() {
+  console.log("Starting column standardization migration...");
+  try {
+    const boards = await prisma.board.findMany({
+      include: { columns: { include: { tasks: true } } },
+    });
+
+    for (const board of boards) {
+      const hasCorrectColumns = board.columns.length === 5 && 
+        board.columns.every((c, i) => {
+          const std = standardColumns[i];
+          return c.title === std.title && c.order === std.order && c.color === std.color;
+        });
+
+      if (hasCorrectColumns) {
+        continue;
+      }
+
+      console.log(`Board "${board.name}" has non-standard columns. Migrating...`);
+
+      const newColumnsMap: Record<string, string> = {};
+      for (const std of standardColumns) {
+        const existingCol = board.columns.find(c => c.title === std.title);
+        if (existingCol) {
+          const updatedCol = await prisma.boardColumn.update({
+            where: { id: existingCol.id },
+            data: { order: std.order, color: std.color },
+          });
+          newColumnsMap[std.title] = updatedCol.id;
+        } else {
+          const newCol = await prisma.boardColumn.create({
+            data: {
+              title: std.title,
+              color: std.color,
+              order: std.order,
+              boardId: board.id,
+            },
+          });
+          newColumnsMap[std.title] = newCol.id;
+        }
+      }
+
+      for (const oldCol of board.columns) {
+        const stdTitle = getStandardColumnName(oldCol.title);
+        const newColId = newColumnsMap[stdTitle];
+
+        if (oldCol.id !== newColId) {
+          for (const task of oldCol.tasks) {
+            await prisma.boardTask.update({
+              where: { id: task.id },
+              data: { columnId: newColId },
+            });
+          }
+        }
+      }
+
+      for (const oldCol of board.columns) {
+        if (!standardColumns.some(std => std.title === oldCol.title)) {
+          await prisma.boardColumn.delete({
+            where: { id: oldCol.id },
+          });
+        }
+      }
+
+      console.log(`Board "${board.name}" migration completed.`);
+    }
+    console.log("Column standardization migration finished successfully.");
+  } catch (err) {
+    console.error("Migration failed:", err);
+  }
+}
+
 const PORT = process.env.PORT || 5000;
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  await migrateDatabaseColumns();
 });
 
 // Graceful shutdown handling

@@ -35,7 +35,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
   const [landedTaskId, setLandedTaskId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [targetColumnId, setTargetColumnId] = useState("todo");
+  const [targetColumnId, setTargetColumnId] = useState(board?.columns[0]?.id || "");
   const [newTitle, setNewTitle] = useState("");
   const [newAssignee, setNewAssignee] = useState("");
   const [selectedAssignee, setSelectedAssignee] = useState("");
@@ -166,7 +166,8 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
         if (taskEnd && taskEnd < today) return false;
       } else if (dateFilter === "overdue") {
         if (!taskEnd || taskEnd >= today) return false;
-        if (colId === "done") return false;
+        const col = board?.columns.find(c => c.id === colId);
+        if (col && (col.title.toLowerCase().includes("done") || col.title.toLowerCase().includes("complete") || col.title.toLowerCase() === "closed")) return false;
       } else if (dateFilter === "upcoming") {
         if (!taskStart || taskStart <= today) return false;
       }
@@ -556,6 +557,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
           onClose={() => setSelectedTask(null)} 
           onUpdate={handleTaskUpdate} 
           teamMembers={board.team.map(initials => ({ initials, name: boardNameMap[initials] }))}
+          columns={board.columns.map(c => ({ id: c.id, title: c.title }))}
         />
       )}
 

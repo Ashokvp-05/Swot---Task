@@ -1,21 +1,24 @@
 "use client";
 import React, { useState } from "react";
-import { X, Plus, Trash2, CheckSquare, Square, Calendar, User, ChevronDown } from "lucide-react";
+import { X, Plus, Trash2, CheckSquare, Square, Calendar, User, ChevronDown, Columns } from "lucide-react";
 
 type TodoItem = { id: string; text: string; done: boolean };
 export type TaskDetail = {
   id: string; title: string; priority: string; tag: string; tagColor: string;
   assignee?: string; startDate?: string; endDate?: string; todos?: TodoItem[];
+  columnId?: string;
 };
 
-export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers }: {
+export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers, columns = [] }: {
   task: TaskDetail; onClose: () => void; onUpdate: (t: TaskDetail) => void;
   teamMembers: { initials: string; name: string }[];
+  columns?: { id: string; title: string }[];
 }) {
   const [title, setTitle] = useState(task.title);
   const [assignee, setAssignee] = useState(task.assignee || "");
   const [startDate, setStartDate] = useState(task.startDate || "");
   const [endDate, setEndDate] = useState(task.endDate || "");
+  const [columnId, setColumnId] = useState(task.columnId || "");
   const [todos, setTodos] = useState<TodoItem[]>(task.todos || []);
   const [newTodo, setNewTodo] = useState("");
 
@@ -30,7 +33,7 @@ export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers }
   const doneCount = todos.filter(t => t.done).length;
 
   const save = () => {
-    onUpdate({ ...task, title, assignee, startDate, endDate, todos });
+    onUpdate({ ...task, title, assignee, startDate, endDate, todos, columnId });
     onClose();
   };
 
@@ -82,7 +85,22 @@ export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers }
           />
 
           {/* ─── Properties Grid ─── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
+          <div style={{ display: "grid", gridTemplateColumns: columns.length > 0 ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
+            {columns.length > 0 && (
+              <div>
+                <label style={fieldLabel}><Columns size={11} strokeWidth={1.5} />Status</label>
+                <div style={{ position: "relative" }}>
+                  <select value={columnId} onChange={e => setColumnId(e.target.value)} 
+                    style={{ ...fieldInput, cursor: "pointer", appearance: "none" as const, paddingRight: 28 }}
+                    onFocus={e => e.currentTarget.style.borderColor = "#6366f1"}
+                    onBlur={e => e.currentTarget.style.borderColor = "#e5e7eb"}
+                  >
+                    {columns.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                  </select>
+                  <ChevronDown size={12} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} />
+                </div>
+              </div>
+            )}
             <div>
               <label style={fieldLabel}><User size={11} strokeWidth={1.5} />Assignee</label>
               <div style={{ position: "relative" }}>
