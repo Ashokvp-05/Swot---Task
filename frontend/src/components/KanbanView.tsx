@@ -534,7 +534,8 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                         <span>
                           {task.startDate && task.endDate 
                             ? `${formatDate(task.startDate)} - ${formatDate(task.endDate)}`
-                            : formatDate(task.startDate || task.endDate)}
+                            : task.startDate ? `Starts: ${formatDate(task.startDate)}`
+                            : `Due: ${formatDate(task.endDate)}`}
                         </span>
                       </div>
                     )}
