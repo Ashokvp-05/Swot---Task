@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  FolderKanban, CheckCircle2, Users, Clock, ArrowUpRight, ArrowDownRight,
-  Plus, AlertCircle, Timer, Flame, Star, TrendingUp,
+  FolderKanban, CheckCircle2, Users, Clock, Flame, 
+  TrendingUp, BarChart2, PieChart as PieChartIcon, LayoutDashboard, Activity
 } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useBoards } from "@/context/BoardContext";
 
 /* ─── Animated Counter Hook ─── */
-function useCounter(target: number, duration = 1200) {
+function useCounter(target: number, duration = 1000) {
   const [val, setVal] = useState(0);
   useEffect(() => {
     let start = 0;
@@ -23,142 +24,173 @@ function useCounter(target: number, duration = 1200) {
   return val;
 }
 
-/* ─── Chart Data ─── */
-const chartData = [
-  { day: "Mon", tasks: 12, completed: 8 },
-  { day: "Tue", tasks: 19, completed: 14 },
-  { day: "Wed", tasks: 15, completed: 12 },
-  { day: "Thu", tasks: 22, completed: 18 },
-  { day: "Fri", tasks: 28, completed: 21 },
-  { day: "Sat", tasks: 14, completed: 11 },
-  { day: "Sun", tasks: 9, completed: 7 },
-];
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#6366f1"];
+const PRIORITY_COLORS: Record<string, string> = { Low: "#3b82f6", Medium: "#f59e0b", High: "#ec4899", Urgent: "#ef4444" };
 
-/* ─── Stats ─── */
-const stats = [
-  { title: "Total Projects", value: 24, suffix: "", change: "+12%", up: true, icon: FolderKanban, color: "#6366f1", bg: "#eef2ff" },
-  { title: "Active Tasks", value: 128, suffix: "", change: "+8%", up: true, icon: Clock, color: "#f59e0b", bg: "#fffbeb" },
-  { title: "Team Members", value: 36, suffix: "", change: "+3", up: true, icon: Users, color: "#10b981", bg: "#ecfdf5" },
-  { title: "Urgent Tasks", value: 0, suffix: "", change: "-5%", up: false, icon: Flame, color: "#ef4444", bg: "#fef2f2" },
-];
-
-/* ─── Kanban Data ─── */
-type Task = { id: string; title: string; priority: string; tag: string; tagColor: string };
-type Column = { id: string; title: string; color: string; tasks: Task[] };
-
-const initialColumns: Column[] = [
-  { id: "todo", title: "To Do", color: "#94a3b8", tasks: [
-    { id: "t1", title: "Design landing page mockup", priority: "High", tag: "Design", tagColor: "#8b5cf6" },
-    { id: "t2", title: "Setup CI/CD pipeline", priority: "Medium", tag: "DevOps", tagColor: "#f59e0b" },
-  ]},
-  { id: "progress", title: "Ongoing", color: "#3b82f6", tasks: [
-    { id: "t3", title: "Implement user auth API", priority: "High", tag: "Backend", tagColor: "#10b981" },
-    { id: "t4", title: "Create Kanban drag & drop", priority: "Urgent", tag: "Frontend", tagColor: "#6366f1" },
-  ]},
-  { id: "review", title: "In Review", color: "#f59e0b", tasks: [
-    { id: "t5", title: "Sprint planning module", priority: "Medium", tag: "Feature", tagColor: "#ec4899" },
-  ]},
-  { id: "done", title: "Completed", color: "#10b981", tasks: [
-    { id: "t6", title: "Project setup & config", priority: "Low", tag: "Setup", tagColor: "#64748b" },
-    { id: "t7", title: "Authentication UI", priority: "High", tag: "Frontend", tagColor: "#6366f1" },
-  ]},
-];
-
-/* ─── Main Dashboard ─── */
 export default function DashboardContent() {
-  const [columns, setColumns] = useState(initialColumns);
+  const { boards } = useBoards();
 
-  // Derived Stats
-  const totalTasks = columns.reduce((acc, col) => acc + col.tasks.length, 0);
-  const activeCount = columns.filter(c => c.id !== "done").reduce((acc, col) => acc + col.tasks.length, 0);
-  const urgentCount = columns.reduce((acc, col) => acc + col.tasks.filter(t => t.priority === "Urgent").length, 0);
-  const teamCount = 6; // Matching initialEmployees
+  // Real-time calculations
+  const totalProjects = boards.length;
+  let activeTasks = 0;
+  let urgentTasks = 0;
+  const uniqueMembers = new Set<string>();
 
-  const p = useCounter(24); // Projects
-  const t = useCounter(activeCount);
-  const m = useCounter(teamCount);
-  const u = useCounter(urgentCount);
+  const priorityDataMap: Record<string, number> = { Low: 0, Medium: 0, High: 0, Urgent: 0 };
+  const columnDataMap: Record<string, number> = {};
+
+  boards.forEach(b => {
+    b.onboardedUsers.forEach(u => uniqueMembers.add(u.id));
+    b.columns.forEach(col => {
+      const isDone = col.title.toLowerCase().includes("done") || col.title.toLowerCase().includes("complete");
+      if (!columnDataMap[col.title]) columnDataMap[col.title] = 0;
+      columnDataMap[col.title] += col.tasks.length;
+      
+      col.tasks.forEach(t => {
+        if (!isDone) activeTasks++;
+        if (t.priority === "Urgent") urgentTasks++;
+        if (priorityDataMap[t.priority] !== undefined) priorityDataMap[t.priority]++;
+        else priorityDataMap[t.priority] = 1;
+      });
+    });
+  });
+
+  const teamMembers = uniqueMembers.size;
+
+  const priorityData = Object.keys(priorityDataMap).filter(k => priorityDataMap[k] > 0).map(k => ({ name: k, value: priorityDataMap[k] }));
+  const columnData = Object.keys(columnDataMap).map(k => ({ name: k, tasks: columnDataMap[k] }));
+
+  const p = useCounter(totalProjects);
+  const t = useCounter(activeTasks);
+  const m = useCounter(teamMembers);
+  const u = useCounter(urgentTasks);
   const counterValues = [p, t, m, u];
 
-  // Simulation Effect for Real-time feeling
-  useEffect(() => {
-    const id = setInterval(() => {
-      setColumns(prev => {
-        const newCols = [...prev];
-        if (Math.random() > 0.9) {
-          const progIdx = newCols.findIndex(c => c.id === "progress");
-          if (newCols[progIdx].tasks.length > 0) {
-            const task = newCols[progIdx].tasks[0];
-            newCols[progIdx] = { ...newCols[progIdx], tasks: newCols[progIdx].tasks.slice(1) };
-            const nextIdx = Math.random() > 0.5 ? newCols.findIndex(c => c.id === "review") : newCols.findIndex(c => c.id === "done");
-            newCols[nextIdx] = { ...newCols[nextIdx], tasks: [...newCols[nextIdx].tasks, task] };
-          }
-        }
-        return newCols;
-      });
-    }, 5000);
-    return () => clearInterval(id);
-  }, []);
+  const stats = [
+    { title: "Total Boards", value: totalProjects, icon: LayoutDashboard, color: "#4f46e5", bg: "linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)" },
+    { title: "Active Tasks", value: activeTasks, icon: Activity, color: "#059669", bg: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)" },
+    { title: "Team Members", value: teamMembers, icon: Users, color: "#ea580c", bg: "linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)" },
+    { title: "Urgent Tasks", value: urgentTasks, icon: Flame, color: "#e11d48", bg: "linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%)" },
+  ];
 
   return (
-    <div style={{ padding: "24px 28px", maxWidth: 1400 }}>
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 24 }}>
+    <div style={{ padding: "30px 40px", maxWidth: 1400, margin: "0 auto" }}>
+      
+      {/* Welcome Banner */}
+      <div style={{
+        background: "linear-gradient(135deg, #4f46e5 0%, #9333ea 100%)",
+        borderRadius: 20, padding: "32px 40px", marginBottom: 32,
+        color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center",
+        boxShadow: "0 10px 30px rgba(79,70,229,0.2)"
+      }}>
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Workspace Overview</h1>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.8)" }}>Here is what's happening across all your real-time Kanban boards today.</p>
+        </div>
+        <div style={{ width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)" }}>
+          <TrendingUp size={30} color="#fff" />
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, marginBottom: 32 }}>
         {stats.map((s, i) => {
           const Icon = s.icon;
           return (
-            <div key={s.title} style={{ background: "#fff", borderRadius: 14, padding: "22px 24px", border: "1px solid #f1f5f9", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", transition: "transform 0.2s, box-shadow 0.2s", cursor: "pointer", animation: `fadeIn 0.5s ease ${i * 0.1}s both` }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.08)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; }}
+            <div key={s.title} style={{ 
+              background: "#fff", borderRadius: 20, padding: "24px", 
+              border: "1px solid #f1f5f9", boxShadow: "0 4px 15px rgba(0,0,0,0.03)", 
+              transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s", 
+              cursor: "pointer", position: "relative", overflow: "hidden"
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 12px 35px rgba(0,0,0,0.08)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(0,0,0,0.03)"; }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div>
-                  <p style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500, marginBottom: 8 }}>{s.title}</p>
-                  <p style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em" }}>{counterValues[i]}{s.suffix}</p>
+              <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, background: s.bg, borderRadius: "50%", opacity: 0.5, filter: "blur(20px)" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 16, position: "relative", zIndex: 1 }}>
+                <div style={{ width: 54, height: 54, borderRadius: 16, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "inset 0 2px 4px rgba(255,255,255,0.5)" }}>
+                  <Icon size={26} color={s.color} />
                 </div>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon size={22} color={s.color} />
+                <div>
+                  <p style={{ fontSize: 13, color: "#64748b", fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.title}</p>
+                  <p style={{ fontSize: 32, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em", lineHeight: 1 }}>{counterValues[i]}</p>
                 </div>
               </div>
-
             </div>
           );
         })}
       </div>
 
-      {/* Chart Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20, marginBottom: 24 }}>
-        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #f1f5f9", padding: "20px 24px 10px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+      {/* Charts Row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24 }}>
+        
+        {/* Task Status Bar Chart */}
+        <div style={{ background: "#fff", borderRadius: 20, padding: "28px", border: "1px solid #f1f5f9", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 30 }}>
+            <div style={{ padding: 8, background: "#f1f5f9", borderRadius: 10 }}><BarChart2 size={20} color="#3b82f6" /></div>
             <div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>Weekly Overview</h3>
-              <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>Tasks created vs completed across all projects</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>Tasks by Column Stage</h3>
+              <p style={{ fontSize: 13, color: "#94a3b8" }}>Distribution of tasks across all your board columns</p>
             </div>
-            <TrendingUp size={20} color="#10b981" />
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} />
-              <Tooltip 
-                contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", fontSize: 13 }}
-                cursor={{ stroke: "#e2e8f0", strokeWidth: 2 }}
-              />
-              <Area type="monotone" dataKey="tasks" stroke="#6366f1" fill="url(#g1)" strokeWidth={3} />
-              <Area type="monotone" dataKey="completed" stroke="#10b981" fill="url(#g2)" strokeWidth={3} />
-            </AreaChart>
-          </ResponsiveContainer>
+          {columnData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={columnData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
+                <Tooltip 
+                  cursor={{ fill: "#f8fafc" }}
+                  contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", fontSize: 13, fontWeight: 600 }}
+                />
+                <Bar dataKey="tasks" fill="#4f46e5" radius={[6, 6, 0, 0]}>
+                  {columnData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 14 }}>
+              No tasks found. Create a board to see data here.
+            </div>
+          )}
         </div>
+
+        {/* Priority Pie Chart */}
+        <div style={{ background: "#fff", borderRadius: 20, padding: "28px", border: "1px solid #f1f5f9", boxShadow: "0 4px 15px rgba(0,0,0,0.02)", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <div style={{ padding: 8, background: "#fef2f2", borderRadius: 10 }}><PieChartIcon size={20} color="#e11d48" /></div>
+            <div>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>Task Priority</h3>
+              <p style={{ fontSize: 13, color: "#94a3b8" }}>Breakdown of task urgency</p>
+            </div>
+          </div>
+          {priorityData.length > 0 ? (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={priorityData} cx="50%" cy="50%" innerRadius={70} outerRadius={100}
+                    paddingAngle={4} dataKey="value" stroke="none"
+                  >
+                    {priorityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PRIORITY_COLORS[entry.name] || COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", fontSize: 13, fontWeight: 600 }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: 13, fontWeight: 500 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 14 }}>
+              No tasks found.
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
