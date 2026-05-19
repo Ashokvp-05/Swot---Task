@@ -529,7 +529,11 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                     {(task.startDate || task.endDate) && (
                       <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>
                         <Calendar size={10} strokeWidth={2} />
-                        <span>{formatDate(task.endDate)}</span>
+                        <span>
+                          {task.startDate && task.endDate 
+                            ? `${formatDate(task.startDate)} - ${formatDate(task.endDate)}`
+                            : formatDate(task.startDate || task.endDate)}
+                        </span>
                       </div>
                     )}
                   </div>
