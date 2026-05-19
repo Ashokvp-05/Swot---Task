@@ -19,7 +19,6 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
   const [role, setRole] = useState<"Manager" | "Employee">("Employee");
   const [showPwd, setShowPwd] = useState(false);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
-  const [successMsg, setSuccessMsg] = useState("");
 
   if (!board) return null;
   if (user?.role === "Employee") return null;
@@ -31,8 +30,7 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
     if (!name.trim() || !email.trim() || !password.trim()) return;
     await addOnboardedUser(boardId, { name: name.trim(), email: email.trim(), password, role });
     setName(""); setEmail(""); setPassword(""); setRole("Employee"); setShowForm(false); setShowPwd(false);
-    setSuccessMsg("User added successfully!");
-    setTimeout(() => setSuccessMsg(""), 3000);
+    alert("User added successfully!");
   };
 
   const togglePwdVisibility = (userId: string) => {
