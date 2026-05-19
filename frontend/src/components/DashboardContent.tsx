@@ -30,6 +30,8 @@ const PRIORITY_COLORS: Record<string, string> = { Low: "#3b82f6", Medium: "#f59e
 export default function DashboardContent() {
   const { boards } = useBoards();
 
+  const [selectedMonth, setSelectedMonth] = useState<string>("All Time");
+
   // Real-time calculations
   const totalProjects = boards.length;
   let activeTasks = 0;
@@ -39,19 +41,36 @@ export default function DashboardContent() {
   const priorityDataMap: Record<string, number> = { Low: 0, Medium: 0, High: 0, Urgent: 0 };
   const columnDataMap: Record<string, number> = {};
 
+  const months = ["All Time", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
   boards.forEach(b => {
     b.onboardedUsers.forEach(u => uniqueMembers.add(u.id));
     b.columns.forEach(col => {
       const isDone = col.title.toLowerCase().includes("done") || col.title.toLowerCase().includes("complete");
-      if (!columnDataMap[col.title]) columnDataMap[col.title] = 0;
-      columnDataMap[col.title] += col.tasks.length;
       
+      let tasksInColumn = 0;
       col.tasks.forEach(t => {
+        // Apply Month Filter if not "All Time"
+        if (selectedMonth !== "All Time") {
+          let taskMonth = -1;
+          if (t.startDate) taskMonth = new Date(t.startDate).getMonth();
+          else if (t.endDate) taskMonth = new Date(t.endDate).getMonth();
+          else if (b.createdAt) taskMonth = new Date(b.createdAt).getMonth(); // Fallback to board creation month
+          
+          if (taskMonth !== months.indexOf(selectedMonth) - 1) return;
+        }
+
+        tasksInColumn++;
         if (!isDone) activeTasks++;
         if (t.priority === "Urgent") urgentTasks++;
         if (priorityDataMap[t.priority] !== undefined) priorityDataMap[t.priority]++;
         else priorityDataMap[t.priority] = 1;
       });
+
+      if (tasksInColumn > 0) {
+        if (!columnDataMap[col.title]) columnDataMap[col.title] = 0;
+        columnDataMap[col.title] += tasksInColumn;
+      }
     });
   });
 
@@ -87,8 +106,23 @@ export default function DashboardContent() {
           <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Workspace Overview</h1>
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.8)" }}>Here is what's happening across all your real-time Kanban boards today.</p>
         </div>
-        <div style={{ width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)" }}>
-          <TrendingUp size={30} color="#fff" />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <select 
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            style={{
+              background: "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)",
+              padding: "10px 16px", borderRadius: 12, fontSize: 14, fontWeight: 600, outline: "none",
+              backdropFilter: "blur(10px)", cursor: "pointer", WebkitAppearance: "none", appearance: "none"
+            }}
+          >
+            {months.map(m => (
+              <option key={m} value={m} style={{ color: "#0f172a" }}>{m}</option>
+            ))}
+          </select>
+          <div style={{ width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)" }}>
+            <TrendingUp size={30} color="#fff" />
+          </div>
         </div>
       </div>
 
