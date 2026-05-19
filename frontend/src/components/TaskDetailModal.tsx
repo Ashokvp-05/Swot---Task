@@ -8,21 +8,9 @@ export type TaskDetail = {
   assignee?: string; startDate?: string; endDate?: string; todos?: TodoItem[];
 };
 
-const teamMembers = [
-  { initials: "JD", name: "John Doe" },
-  { initials: "SK", name: "Sarah Kim" },
-  { initials: "MJ", name: "Mike Johnson" },
-  { initials: "AW", name: "Alex Wang" },
-  { initials: "LR", name: "Lisa Roberts" },
-  { initials: "DK", name: "David Kim" },
-];
-
-const priorityDot: Record<string, string> = {
-  Urgent: "#ef4444", High: "#f97316", Medium: "#eab308", Low: "#94a3b8",
-};
-
-export default function TaskDetailModal({ task, onClose, onUpdate }: {
+export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers }: {
   task: TaskDetail; onClose: () => void; onUpdate: (t: TaskDetail) => void;
+  teamMembers: { initials: string; name: string }[];
 }) {
   const [title, setTitle] = useState(task.title);
   const [assignee, setAssignee] = useState(task.assignee || "");

@@ -544,7 +544,12 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
 
       {/* ─── Task Detail Modal ─── */}
       {selectedTask && (
-        <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={handleTaskUpdate} />
+        <TaskDetailModal 
+          task={selectedTask} 
+          onClose={() => setSelectedTask(null)} 
+          onUpdate={handleTaskUpdate} 
+          teamMembers={board.team.map(initials => ({ initials, name: boardNameMap[initials] }))}
+        />
       )}
 
       {/* ─── Create Modal ─── */}
