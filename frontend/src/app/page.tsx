@@ -49,7 +49,7 @@ function AppContent() {
   const [activeView, setActiveView] = useState<string>("dashboard");
 
   useEffect(() => {
-    if (user) {
+    if (user && activeView === "dashboard") {
       if (user.role === "Employee") {
         const visibleBoards = boards.filter((b) => {
           const userInitials = user?.initials || "";
@@ -70,11 +70,9 @@ function AppContent() {
         } else {
           setActiveView("boards");
         }
-      } else {
-        setActiveView("dashboard");
       }
     }
-  }, [user, boards]);
+  }, [user, boards.length]);
   const [collapsed, setCollapsed] = useState(false);
 
   if (!user) return <LoginPage />;
