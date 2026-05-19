@@ -19,6 +19,7 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
   const [role, setRole] = useState<"Manager" | "Employee">("Employee");
   const [showPwd, setShowPwd] = useState(false);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [successMsg, setSuccessMsg] = useState("");
 
   if (!board) return null;
   if (user?.role === "Employee") return null;
@@ -26,10 +27,12 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
 
   const users = board.onboardedUsers;
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!name.trim() || !email.trim() || !password.trim()) return;
-    addOnboardedUser(boardId, { name: name.trim(), email: email.trim(), password, role });
+    await addOnboardedUser(boardId, { name: name.trim(), email: email.trim(), password, role });
     setName(""); setEmail(""); setPassword(""); setRole("Employee"); setShowForm(false); setShowPwd(false);
+    setSuccessMsg("User added successfully!");
+    setTimeout(() => setSuccessMsg(""), 3000);
   };
 
   const togglePwdVisibility = (userId: string) => {
@@ -87,6 +90,18 @@ export default function OnboardingPanel({ boardId }: { boardId: string }) {
       {/* Body */}
       {!collapsed && (
         <div style={{ padding: "12px 20px 16px" }}>
+          {/* Success Message */}
+          {successMsg && (
+            <div style={{
+              background: "#dcfce7", color: "#166534", padding: "10px 14px",
+              borderRadius: 8, fontSize: 13, fontWeight: 600, marginBottom: 16,
+              display: "flex", alignItems: "center", gap: 8,
+              border: "1px solid #bbf7d0"
+            }}>
+              {successMsg}
+            </div>
+          )}
+
           {/* User Table */}
           {users.length > 0 && (
             <div style={{ marginBottom: showForm ? 16 : 0 }}>
