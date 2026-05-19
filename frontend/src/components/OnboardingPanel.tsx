@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Trash2, UserPlus, Mail, Lock, ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, UserPlus, Mail, Lock, ChevronDown, ChevronUp, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { useBoards } from "@/context/BoardContext";
 import { useAuth } from "@/context/AuthContext";
 
