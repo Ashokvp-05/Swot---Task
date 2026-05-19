@@ -313,7 +313,7 @@ app.put("/api/boards/:boardId/columns", async (req, res) => {
 
 app.post("/api/boards/:boardId/tasks", async (req, res) => {
   try {
-    const { title, priority, assignee, endDate, columnId } = req.body;
+    const { title, priority, assignee, startDate, endDate, columnId } = req.body;
     
     const count = await prisma.boardTask.count({ where: { columnId } });
     
@@ -322,6 +322,7 @@ app.post("/api/boards/:boardId/tasks", async (req, res) => {
         title,
         priority: priority || "Medium",
         assignee,
+        startDate,
         endDate,
         columnId,
         order: count,
