@@ -504,7 +504,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                     padding: "10px 12px",
                     border: "1px solid #e5e7eb",
                     borderLeft: `4px solid ${col.color}`,
-                    cursor: "grab",
+                    cursor: "pointer",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                     flexShrink: 0,
                     position: "relative",
