@@ -123,8 +123,7 @@ export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers, 
             }}
           />
 
-          {/* Thin separator line */}
-          <div style={{ borderTop: "1px solid #f1f5f9", margin: "6px 0 12px 0" }} />
+
 
           {/* Subheading - borderless & smaller */}
           <textarea 
