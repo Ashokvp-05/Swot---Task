@@ -583,18 +583,20 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                       })()}
 
                       {/* Priority Badge */}
-                      <span style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        background: `${priorityConfig[task.priority]?.color || "#94a3b8"}15`,
-                        color: priorityConfig[task.priority]?.color || "#94a3b8",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}>
-                        {task.priority}
-                      </span>
+                      {task.priority !== "Medium" && task.priority !== "High" && (
+                        <span style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                          background: `${priorityConfig[task.priority]?.color || "#94a3b8"}15`,
+                          color: priorityConfig[task.priority]?.color || "#94a3b8",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}>
+                          {task.priority}
+                        </span>
+                      )}
                     </div>
 
                     {/* Date */}
