@@ -45,11 +45,11 @@ function AccessDenied() {
 
 function AppContent() {
   const { user, hasAccess } = useAuth();
-  const { boards } = useBoards();
+  const { boards, loading: boardsLoading } = useBoards();
   const [activeView, setActiveView] = useState<string>("dashboard");
 
   useEffect(() => {
-    if (user) {
+    if (user && !boardsLoading) {
       if (user.role === "Employee") {
         if (activeView === "dashboard" || activeView === "boards") {
           // Use boardId from login response if available (direct match)
@@ -87,10 +87,30 @@ function AppContent() {
         }
       }
     }
-  }, [user, boards, activeView]);
+  }, [user, boards, activeView, boardsLoading]);
   const [collapsed, setCollapsed] = useState(false);
 
   if (!user) return <LoginPage />;
+
+  if (boardsLoading) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#f1f5f9" }}>
+        <div style={{
+          width: 32, height: 32,
+          border: "3px solid #e2e8f0",
+          borderTop: "3px solid #6366f1",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite"
+        }} />
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}} />
+      </div>
+    );
+  }
 
   // Extract board ID if viewing a specific board
   const isBoardView = activeView.startsWith("board:");

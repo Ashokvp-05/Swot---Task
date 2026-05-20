@@ -63,6 +63,7 @@ export const memberNameMap: Record<string, string> = Object.fromEntries(
 /* ─── Context ─── */
 type BoardContextType = {
   boards: Board[];
+  loading: boolean;
   addBoard: (board: Omit<Board, "id" | "createdAt" | "columns" | "onboardedUsers">) => void;
   updateBoard: (id: string, updates: Partial<Board>) => void;
   deleteBoard: (id: string) => void;
@@ -79,6 +80,7 @@ type BoardContextType = {
 
 const BoardContext = createContext<BoardContextType>({
   boards: [],
+  loading: true,
   addBoard: () => {},
   updateBoard: () => {},
   deleteBoard: () => {},
@@ -95,9 +97,11 @@ const BoardContext = createContext<BoardContextType>({
 
 export function BoardProvider({ children }: { children: ReactNode }) {
   const [boards, setBoards] = useState<Board[]>([]);
+  const [loading, setLoading] = useState(true);
   const [socket, setSocket] = useState<Socket | null>(null);
 
   const fetchBoards = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await fetch("/api/boards");
       if (res.ok) {
@@ -106,6 +110,8 @@ export function BoardProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Failed to fetch boards:", error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -409,7 +415,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   return (
     <BoardContext.Provider
-      value={{ boards, addBoard, updateBoard, deleteBoard, getBoardById, updateBoardColumns, addTask, updateTask, deleteTask, addOnboardedUser, removeOnboardedUser, getAllOnboardedUsers, socket }}
+      value={{ boards, loading, addBoard, updateBoard, deleteBoard, getBoardById, updateBoardColumns, addTask, updateTask, deleteTask, addOnboardedUser, removeOnboardedUser, getAllOnboardedUsers, socket }}
     >
       {children}
     </BoardContext.Provider>
