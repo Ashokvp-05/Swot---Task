@@ -46,6 +46,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filterMonth, setFilterMonth] = useState<Date | null>(null);
   const [showProfileView, setShowProfileView] = useState(false);
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const dragCloneRef = useRef<HTMLElement | null>(null);
 
   // --- Drag Handlers ---
@@ -498,6 +499,8 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                   onClick={() => setSelectedTask(task as Task)}
                   onDragStart={(e) => handleDragStart(e, task.id, col.id)}
                   onDragEnd={handleDragEnd}
+                  onMouseEnter={() => setHoveredTaskId(task.id)}
+                  onMouseLeave={() => setHoveredTaskId(null)}
                   style={{
                     background: "#fff",
                     borderRadius: 6,
@@ -531,7 +534,9 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      transition: "all 0.15s",
+                      transition: "all 0.15s ease-in-out",
+                      opacity: hoveredTaskId === task.id ? 1 : 0,
+                      visibility: hoveredTaskId === task.id ? "visible" : "hidden",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = "#ef4444";
