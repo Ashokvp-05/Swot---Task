@@ -9,8 +9,9 @@ export type TaskDetail = {
   columnId?: string; updatedAt?: string;
 };
 
-export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers, columns = [] }: {
+export default function TaskDetailModal({ task, onClose, onUpdate, onDelete, teamMembers, columns = [] }: {
   task: TaskDetail; onClose: () => void; onUpdate: (t: TaskDetail) => void;
+  onDelete?: (taskId: string) => void;
   teamMembers: { initials: string; name: string }[];
   columns?: { id: string; title: string }[];
 }) {
@@ -474,17 +475,33 @@ export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers, 
         </div>
 
         {/* ─── Footer ─── */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "12px 20px", borderTop: "1px solid #f3f4f6" }}>
-          <button onClick={onClose} style={{ 
-            padding: "7px 16px", borderRadius: 6, border: "1px solid #e5e7eb", 
-            background: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", 
-            fontFamily: "inherit", color: "#6b7280", transition: "all 0.1s" 
-          }}>Cancel</button>
-          <button onClick={save} style={{ 
-            padding: "7px 16px", borderRadius: 6, border: "none", 
-            background: "#111827", color: "#fff", fontSize: 12, fontWeight: 500, 
-            cursor: "pointer", fontFamily: "inherit", transition: "all 0.1s" 
-          }}>Save</button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderTop: "1px solid #f3f4f6" }}>
+          {onDelete ? (
+            <button 
+              onClick={() => onDelete(task.id)} 
+              style={{ 
+                display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, 
+                border: "1px solid #fecaca", background: "#fef2f2", fontSize: 12, fontWeight: 500, 
+                color: "#ef4444", cursor: "pointer", fontFamily: "inherit", transition: "all 0.1s" 
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#fee2e2"; e.currentTarget.style.borderColor = "#fca5a5"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = "#fecaca"; }}
+            >
+              <Trash2 size={13} /> Delete Task
+            </button>
+          ) : <div />}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={onClose} style={{ 
+              padding: "7px 16px", borderRadius: 6, border: "1px solid #e5e7eb", 
+              background: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", 
+              fontFamily: "inherit", color: "#6b7280", transition: "all 0.1s" 
+            }}>Cancel</button>
+            <button onClick={save} style={{ 
+              padding: "7px 16px", borderRadius: 6, border: "none", 
+              background: "#111827", color: "#fff", fontSize: 12, fontWeight: 500, 
+              cursor: "pointer", fontFamily: "inherit", transition: "all 0.1s" 
+            }}>Save</button>
+          </div>
         </div>
       </div>
     </div>

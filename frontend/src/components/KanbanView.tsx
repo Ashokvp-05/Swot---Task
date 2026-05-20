@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { Plus, Calendar, ChevronLeft, ChevronRight, ArrowLeft, LogOut, Shield, User, Mail, Briefcase, MapPin, X } from "lucide-react";
+import { Plus, Calendar, ChevronLeft, ChevronRight, ArrowLeft, LogOut, Shield, User, Mail, Briefcase, MapPin, X, Trash2 } from "lucide-react";
 import TaskDetailModal, { TaskDetail } from "./TaskDetailModal";
 import OnboardingPanel from "./OnboardingPanel";
 import { useBoards, memberNameMap, allTeamMembers, BoardTask, BoardColumn } from "@/context/BoardContext";
@@ -25,7 +25,7 @@ function formatDate(d?: string) {
 
 export default function KanbanView({ boardId, onBack }: { boardId: string; onBack: () => void }) {
   const { user, logout } = useAuth();
-  const { getBoardById, updateBoardColumns, addTask, updateTask } = useBoards();
+  const { getBoardById, updateBoardColumns, addTask, updateTask, deleteTask } = useBoards();
   const board = getBoardById(boardId);
 
   const isEmployee = user?.role === "Employee";
@@ -507,8 +507,46 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                     cursor: "grab",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                     flexShrink: 0,
+                    position: "relative",
                   }}
                 >
+                  {/* Delete Button (Card Level) */}
+                  {!isEmployee && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm("Are you sure you want to delete this task?")) {
+                          deleteTask(task.id);
+                        }
+                      }}
+                      style={{
+                        position: "absolute",
+                        top: 6,
+                        right: 6,
+                        background: "none",
+                        border: "none",
+                        color: "#cbd5e1",
+                        cursor: "pointer",
+                        padding: 3,
+                        borderRadius: 4,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#ef4444";
+                        e.currentTarget.style.background = "#fee2e2";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "#cbd5e1";
+                        e.currentTarget.style.background = "none";
+                      }}
+                      title="Delete Task"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
                   {/* Title Row */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8 }}>
                     {(() => {
@@ -540,6 +578,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
                             overflow: "hidden", overflowWrap: "anywhere", wordBreak: "break-word",
                             margin: 0,
+                            paddingRight: isEmployee ? 0 : 18,
                           }} title={mainTitle}>{mainTitle}</p>
                           {hasSub && (
                             <>
@@ -627,6 +666,12 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
           task={selectedTask} 
           onClose={() => setSelectedTask(null)} 
           onUpdate={handleTaskUpdate} 
+          onDelete={isEmployee ? undefined : (taskId) => {
+            if (confirm("Are you sure you want to delete this task?")) {
+              deleteTask(taskId);
+              setSelectedTask(null);
+            }
+          }}
           teamMembers={fullTeam.map(initials => ({ initials, name: boardNameMap[initials] }))}
           columns={board.columns.map(c => ({ id: c.id, title: c.title }))}
         />
