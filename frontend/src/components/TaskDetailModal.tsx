@@ -28,7 +28,7 @@ export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers, 
   } else if (hasDelimiter) {
     const parts = task.title.split(/\s*>>\s*/);
     initialTitle = parts[0];
-    initialSub = parts.slice(1).join(" >> ");
+    initialSub = parts.slice(1).join("\n");
   }
 
   const [title, setTitle] = useState(initialTitle);
@@ -55,7 +55,7 @@ export default function TaskDetailModal({ task, onClose, onUpdate, teamMembers, 
   const doneCount = todos.filter(t => t.done).length;
 
   const save = () => {
-    const combinedTitle = subheading.trim() ? `${title.trim()} >> ${subheading.trim()}` : title.trim();
+    const combinedTitle = subheading.trim() ? `${title.trim()}\n${subheading.trim()}` : title.trim();
     onUpdate({ ...task, title: combinedTitle, description, assignee, startDate, endDate, link, todos, columnId });
     onClose();
   };

@@ -526,7 +526,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                       } else if (hasDelimiter) {
                         const parts = task.title.split(/\s*>>\s*/);
                         mainTitle = parts[0];
-                        subHeading = parts.slice(1).join(" >> ");
+                        subHeading = parts.slice(1).join("\n");
                       }
 
                       return (
