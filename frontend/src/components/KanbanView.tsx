@@ -511,42 +511,40 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                   }}
                 >
                   {/* Delete Button (Card Level) */}
-                  {!isEmployee && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm("Are you sure you want to delete this task?")) {
-                          deleteTask(task.id);
-                        }
-                      }}
-                      style={{
-                        position: "absolute",
-                        top: 6,
-                        right: 6,
-                        background: "none",
-                        border: "none",
-                        color: "#cbd5e1",
-                        cursor: "pointer",
-                        padding: 3,
-                        borderRadius: 4,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "all 0.15s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "#ef4444";
-                        e.currentTarget.style.background = "#fee2e2";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "#cbd5e1";
-                        e.currentTarget.style.background = "none";
-                      }}
-                      title="Delete Task"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm("Are you sure you want to delete this task?")) {
+                        deleteTask(task.id);
+                      }
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: 6,
+                      right: 6,
+                      background: "none",
+                      border: "none",
+                      color: "#cbd5e1",
+                      cursor: "pointer",
+                      padding: 3,
+                      borderRadius: 4,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#ef4444";
+                      e.currentTarget.style.background = "#fee2e2";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#cbd5e1";
+                      e.currentTarget.style.background = "none";
+                    }}
+                    title="Delete Task"
+                  >
+                    <Trash2 size={12} />
+                  </button>
                   {/* Title Row */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8 }}>
                     {(() => {
@@ -666,7 +664,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
           task={selectedTask} 
           onClose={() => setSelectedTask(null)} 
           onUpdate={handleTaskUpdate} 
-          onDelete={isEmployee ? undefined : (taskId) => {
+          onDelete={(taskId) => {
             if (confirm("Are you sure you want to delete this task?")) {
               deleteTask(taskId);
               setSelectedTask(null);
