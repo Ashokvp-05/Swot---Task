@@ -39,14 +39,16 @@ model BoardColumn {
 }
 
 model BoardTask {
-  id        String      @id @default(uuid())
-  title     String
-  priority  String      @default("Medium")
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  priority    String      @default("Medium")
   tag       String?
   tagColor  String?
   assignee  String?
   startDate String?
   endDate   String?
+  link      String?
   order     Int         @default(0)
   columnId  String
   column    BoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
@@ -59,6 +61,7 @@ model TaskTodo {
   id     String    @id @default(uuid())
   text   String
   done   Boolean   @default(false)
+  link   String?
   taskId String
   task   BoardTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }

@@ -37,6 +37,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [targetColumnId, setTargetColumnId] = useState(board?.columns[0]?.id || "");
   const [newTitle, setNewTitle] = useState("");
+  const [newLink, setNewLink] = useState("");
   const [newAssignee, setNewAssignee] = useState("");
   const [selectedAssignee, setSelectedAssignee] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
@@ -141,14 +142,15 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
   const handleAddTask = () => {
     if (!newTitle.trim()) return;
     addTask(boardId, {
-      title: newTitle,
+      title: newTitle.trim(),
       priority: "Medium",
       assignee: newAssignee || fullTeam[0] || "",
       startDate: newStartDate,
       endDate: newDueDate,
+      link: newLink.trim() || undefined,
       columnId: targetColumnId,
     });
-    setNewTitle(""); setNewStartDate(""); setNewDueDate(""); setNewAssignee(""); setShowModal(false);
+    setNewTitle(""); setNewLink(""); setNewStartDate(""); setNewDueDate(""); setNewAssignee(""); setShowModal(false);
   };
 
   const filterTask = (t: BoardTask, colId: string) => {
@@ -443,10 +445,16 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
       </div>
 
       {/* ─── Board ─── */}
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns.length}, 1fr)`, gap: 12, height: "100%" }}>
+      <div style={{ flex: 1, overflowX: "auto", overflowY: "hidden", paddingBottom: 8 }} className="custom-scrollbar">
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns.length}, minmax(300px, 1fr))`, gap: 12, height: "100%" }}>
         {columns.map((col) => {
-          const filtered = col.tasks.filter(t => filterTask(t, col.id));
+          const filtered = col.tasks
+            .filter(t => filterTask(t, col.id))
+            .sort((a, b) => {
+              const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+              const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+              return dateB - dateA;
+            });
           return (
           <div key={col.id}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; e.currentTarget.classList.add("kanban-column-dragover"); }}
@@ -491,24 +499,67 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                   onDragStart={(e) => handleDragStart(e, task.id, col.id)}
                   onDragEnd={handleDragEnd}
                   style={{
-                    background: "#fff", borderRadius: 8, padding: "10px 12px",
-                    border: "1px solid #e5e7eb", cursor: "grab",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.03)", flexShrink: 0,
+                    background: "#fff",
+                    borderRadius: 6,
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderLeft: `4px solid ${col.color}`,
+                    cursor: "grab",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                    flexShrink: 0,
                   }}
                 >
                   {/* Title Row */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                    <div style={{
-                      width: 7, height: 7, borderRadius: "50%", flexShrink: 0, marginTop: 4,
-                      background: priorityConfig[task.priority]?.color || "#94a3b8",
-                    }} title={task.priority} />
-                    <p style={{
-                      fontSize: 13, fontWeight: 500, color: "#111827", lineHeight: 1.4,
-                      letterSpacing: "-0.01em",
-                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                      overflow: "hidden", overflowWrap: "anywhere", wordBreak: "break-word",
-                      margin: 0,
-                    }} title={task.title}>{task.title}</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8 }}>
+                    {(() => {
+                      const hasNewline = task.title.includes("\n");
+                      const hasDelimiter = task.title.includes(">>");
+                      const hasSub = hasNewline || hasDelimiter;
+
+                      let mainTitle = task.title;
+                      let subHeading = "";
+
+                      if (hasNewline) {
+                        const parts = task.title.split("\n");
+                        mainTitle = parts[0];
+                        subHeading = parts.slice(1).join("\n");
+                      } else if (hasDelimiter) {
+                        const parts = task.title.split(/\s*>>\s*/);
+                        mainTitle = parts[0];
+                        subHeading = parts.slice(1).join(" >> ");
+                      }
+
+                      return (
+                        <>
+                          <p style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: "#1e293b",
+                            lineHeight: 1.4,
+                            letterSpacing: "-0.01em",
+                            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                            overflow: "hidden", overflowWrap: "anywhere", wordBreak: "break-word",
+                            margin: 0,
+                          }} title={mainTitle}>{mainTitle}</p>
+                          {hasSub && (
+                            <>
+                              <div style={{ margin: "6px 0", borderTop: "1px solid #e2e8f0" }} />
+                              <p style={{
+                                fontSize: 13.5,
+                                fontWeight: 500,
+                                color: "#334155",
+                                lineHeight: 1.4,
+                                letterSpacing: "-0.01em",
+                                whiteSpace: "pre-line",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                                margin: 0,
+                              }} title={subHeading}>{subHeading}</p>
+                            </>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Meta Row */}
@@ -530,11 +581,25 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                           }}>{task.assignee}</div>
                         );
                       })()}
+
+                      {/* Priority Badge */}
+                      <span style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: "2px 6px",
+                        borderRadius: 4,
+                        background: `${priorityConfig[task.priority]?.color || "#94a3b8"}15`,
+                        color: priorityConfig[task.priority]?.color || "#94a3b8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}>
+                        {task.priority}
+                      </span>
                     </div>
 
                     {/* Date */}
                     {(task.startDate || task.endDate) && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: "#64748b", fontWeight: 500 }}>
                         <Calendar size={10} strokeWidth={2} />
                         <span>
                           {task.startDate && task.endDate 
@@ -573,6 +638,15 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Title</label>
               <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="What needs to be done?"
+                style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", color: "#0f172a", boxSizing: "border-box" }}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#6366f1"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "#e2e8f0"}
+              />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Demo Link (Optional)</label>
+              <input value={newLink} onChange={(e) => setNewLink(e.target.value)} placeholder="e.g. https://hrms-demo.rudratic.com"
                 style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", color: "#0f172a", boxSizing: "border-box" }}
                 onFocus={(e) => e.currentTarget.style.borderColor = "#6366f1"}
                 onBlur={(e) => e.currentTarget.style.borderColor = "#e2e8f0"}

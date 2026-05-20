@@ -23,13 +23,16 @@ export type BoardColumn = {
 export type BoardTask = {
   id: string;
   title: string;
+  description?: string;
   priority: string;
   tag: string;
   tagColor: string;
   assignee?: string;
   startDate?: string;
   endDate?: string;
-  todos?: { id: string; text: string; done: boolean }[];
+  link?: string;
+  todos?: { id: string; text: string; done: boolean; link?: string }[];
+  updatedAt?: string;
 };
 
 export type Board = {

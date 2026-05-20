@@ -326,17 +326,19 @@ app.put("/api/boards/:boardId/columns", async (req, res) => {
 
 app.post("/api/boards/:boardId/tasks", async (req, res) => {
   try {
-    const { title, priority, assignee, startDate, endDate, columnId } = req.body;
+    const { title, description, priority, assignee, startDate, endDate, link, columnId } = req.body;
     
     const count = await prisma.boardTask.count({ where: { columnId } });
     
     const task = await prisma.boardTask.create({
       data: {
         title,
+        description,
         priority: priority || "Medium",
         assignee,
         startDate,
         endDate,
+        link,
         columnId,
         order: count,
       },
@@ -353,7 +355,7 @@ app.post("/api/boards/:boardId/tasks", async (req, res) => {
 
 app.patch("/api/tasks/:id", async (req, res) => {
   try {
-    const { title, priority, assignee, startDate, endDate, columnId, todos } = req.body;
+    const { title, description, priority, assignee, startDate, endDate, link, columnId, todos } = req.body;
     
     // Process todos: delete all and recreate for simplicity
     if (todos) {
@@ -364,14 +366,16 @@ app.patch("/api/tasks/:id", async (req, res) => {
       where: { id: req.params.id },
       data: {
         title,
+        description,
         priority,
         assignee,
         startDate,
         endDate,
+        link,
         columnId,
         ...(todos ? {
           todos: {
-            create: todos.map((t: any) => ({ text: t.text, done: t.done }))
+            create: todos.map((t: any) => ({ text: t.text, done: t.done, link: t.link }))
           }
         } : {})
       },
@@ -580,3 +584,5 @@ const shutdown = () => {
 
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+
+// Trigger reload
