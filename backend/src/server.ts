@@ -563,10 +563,33 @@ async function migrateUserInitials() {
   }
 }
 
+async function ensureAdminUsers() {
+  console.log("Ensuring admin users exist...");
+  const admins = [
+    { name: "Ashok", username: "Ashok", password: "Swot@1234", department: "Management" },
+    { name: "Sam", username: "sam@rudratic.com", password: "Swot@12345", department: "Management" },
+    { name: "Marx", username: "marx.rudratic@gmail.com", password: "Swot@12345", department: "Management" },
+  ];
+
+  for (const admin of admins) {
+    const existing = await prisma.systemUser.findFirst({
+      where: { username: { equals: admin.username, mode: "insensitive" } },
+    });
+    if (!existing) {
+      await prisma.systemUser.create({
+        data: { ...admin, role: "Admin" },
+      });
+      console.log(`  Created admin: ${admin.name} (${admin.username})`);
+    }
+  }
+  console.log("Admin users check complete.");
+}
+
 const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  await ensureAdminUsers();
   await migrateDatabaseColumns();
   await migrateUserInitials();
 });

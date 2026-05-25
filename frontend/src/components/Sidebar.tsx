@@ -5,9 +5,7 @@ import { useAuth, Role } from "@/context/AuthContext";
 import { useBoards } from "@/context/BoardContext";
 import {
   LayoutDashboard,
-  KanbanSquare,
   Users,
-  LogOut,
   Menu,
   X,
   Shield,
@@ -38,7 +36,7 @@ interface SidebarProps {
 
 export default function Sidebar({ activeView, onNavigate, collapsed, onToggle }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const { user, logout, hasAccess } = useAuth();
+  const { user, hasAccess } = useAuth();
   const { boards } = useBoards();
 
   const badge = user ? roleBadgeColors[user.role] : null;
@@ -352,34 +350,7 @@ export default function Sidebar({ activeView, onNavigate, collapsed, onToggle }:
         )}
       </nav>
 
-      {/* Logout Button */}
-      <div style={{ padding: "12px 8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <button
-          onClick={logout}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.color = "#fca5a5"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#64748b"; }}
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: collapsed ? "11px 0" : "10px 14px",
-            borderRadius: 10,
-            border: "none",
-            cursor: "pointer",
-            background: "transparent",
-            color: "#64748b",
-            fontSize: 13,
-            fontWeight: 500,
-            fontFamily: "inherit",
-            transition: "all 0.2s ease",
-            justifyContent: collapsed ? "center" : "flex-start",
-          }}
-        >
-          <LogOut size={19} />
-          {!collapsed && <span>Sign Out</span>}
-        </button>
-      </div>
+
     </aside>
   );
 }

@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  FolderKanban, CheckCircle2, Users, Clock, Flame, 
-  TrendingUp, BarChart2, PieChart as PieChartIcon, LayoutDashboard, Activity
+  Users, Flame, 
+  TrendingUp, BarChart2, LayoutDashboard, Activity
 } from "lucide-react";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useBoards } from "@/context/BoardContext";
 
 /* ─── Animated Counter Hook ─── */
@@ -25,7 +25,7 @@ function useCounter(target: number, duration = 1000) {
 }
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#6366f1"];
-const PRIORITY_COLORS: Record<string, string> = { Low: "#3b82f6", Medium: "#f59e0b", High: "#ec4899", Urgent: "#ef4444" };
+
 
 export default function DashboardContent() {
   const { boards } = useBoards();
@@ -38,7 +38,7 @@ export default function DashboardContent() {
   let urgentTasks = 0;
   const uniqueMembers = new Set<string>();
 
-  const priorityDataMap: Record<string, number> = { Low: 0, Medium: 0, High: 0, Urgent: 0 };
+
   const columnDataMap: Record<string, number> = {};
 
   const months = ["All Time", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -63,8 +63,7 @@ export default function DashboardContent() {
         tasksInColumn++;
         if (!isDone) activeTasks++;
         if (t.priority === "Urgent") urgentTasks++;
-        if (priorityDataMap[t.priority] !== undefined) priorityDataMap[t.priority]++;
-        else priorityDataMap[t.priority] = 1;
+
       });
 
       if (tasksInColumn > 0) {
@@ -76,7 +75,7 @@ export default function DashboardContent() {
 
   const teamMembers = uniqueMembers.size;
 
-  const priorityData = Object.keys(priorityDataMap).filter(k => priorityDataMap[k] > 0).map(k => ({ name: k, value: priorityDataMap[k] }));
+
   const columnData = Object.keys(columnDataMap).map(k => ({ name: k, tasks: columnDataMap[k] }));
 
   const p = useCounter(totalProjects);
@@ -156,7 +155,7 @@ export default function DashboardContent() {
       </div>
 
       {/* Charts Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
         
         {/* Task Status Bar Chart */}
         <div style={{ background: "#fff", borderRadius: 20, padding: "28px", border: "1px solid #f1f5f9", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
@@ -190,40 +189,7 @@ export default function DashboardContent() {
           )}
         </div>
 
-        {/* Priority Pie Chart */}
-        <div style={{ background: "#fff", borderRadius: 20, padding: "28px", border: "1px solid #f1f5f9", boxShadow: "0 4px 15px rgba(0,0,0,0.02)", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <div style={{ padding: 8, background: "#fef2f2", borderRadius: 10 }}><PieChartIcon size={20} color="#e11d48" /></div>
-            <div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>Task Priority</h3>
-              <p style={{ fontSize: 13, color: "#94a3b8" }}>Breakdown of task urgency</p>
-            </div>
-          </div>
-          {priorityData.length > 0 ? (
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={priorityData} cx="50%" cy="50%" innerRadius={70} outerRadius={100}
-                    paddingAngle={4} dataKey="value" stroke="none"
-                  >
-                    {priorityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PRIORITY_COLORS[entry.name] || COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", fontSize: 13, fontWeight: 600 }}
-                  />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: 13, fontWeight: 500 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 14 }}>
-              No tasks found.
-            </div>
-          )}
-        </div>
+
 
       </div>
     </div>

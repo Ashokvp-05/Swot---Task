@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { Plus, Calendar, ChevronLeft, ChevronRight, ArrowLeft, LogOut, Shield, User, Mail, Briefcase, MapPin, X, Trash2 } from "lucide-react";
+import { Plus, Calendar, ChevronLeft, ChevronRight, ArrowLeft, LogOut, User, Mail, Briefcase, X, Trash2, Users2 } from "lucide-react";
 import TaskDetailModal, { TaskDetail } from "./TaskDetailModal";
 import OnboardingPanel from "./OnboardingPanel";
 import { useBoards, memberNameMap, allTeamMembers, BoardTask, BoardColumn } from "@/context/BoardContext";
@@ -47,6 +47,7 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
   const [filterMonth, setFilterMonth] = useState<Date | null>(null);
   const [showProfileView, setShowProfileView] = useState(false);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
+  const [showTeamPanel, setShowTeamPanel] = useState(false);
   const dragCloneRef = useRef<HTMLElement | null>(null);
 
   // --- Drag Handlers ---
@@ -220,36 +221,117 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
   return (
     <div style={{ 
       padding: isEmployee ? "32px 32px" : "20px 24px", 
-      height: isEmployee ? "100vh" : "calc(100vh - 64px)", 
+      minHeight: isEmployee ? "100vh" : "calc(100vh - 64px)", 
       display: "flex", 
       flexDirection: "column", 
-      overflow: "hidden" 
+      overflowX: "hidden",
+      overflowY: "auto",
     }}>
       {/* ─── Board Header ─── */}
       {user?.role !== "Employee" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={onBack}
+              style={{
+                background: "none", border: "1px solid #e5e7eb", borderRadius: 8, padding: "6px 8px",
+                cursor: "pointer", display: "flex", alignItems: "center", color: "#6b7280",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#c7d2fe"; e.currentTarget.style.color = "#374151"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; }}
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div style={{ width: 10, height: 10, borderRadius: 4, background: board.color, flexShrink: 0 }} />
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.02em" }}>
+              {board.name}
+            </h2>
+            <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>{board.description}</span>
+          </div>
+          {/* Team Members Button */}
           <button
-            onClick={onBack}
+            onClick={() => setShowTeamPanel(true)}
             style={{
-              background: "none", border: "1px solid #e5e7eb", borderRadius: 8, padding: "6px 8px",
-              cursor: "pointer", display: "flex", alignItems: "center", color: "#6b7280",
-              transition: "all 0.15s",
+              display: "flex", alignItems: "center", gap: 8, padding: "7px 16px",
+              borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+              color: "#374151", transition: "all 0.2s ease",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#c7d2fe"; e.currentTarget.style.color = "#374151"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#c7d2fe"; e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(99,102,241,0.1)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; }}
           >
-            <ArrowLeft size={16} />
+            <Users2 size={16} color="#6366f1" />
+            <span>Team</span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: "1px 7px", borderRadius: 8,
+              background: "linear-gradient(135deg, #e0e7ff, #ede9fe)", color: "#4338ca",
+              minWidth: 20, textAlign: "center",
+            }}>
+              {board.onboardedUsers?.length || 0}
+            </span>
           </button>
-          <div style={{ width: 10, height: 10, borderRadius: 4, background: board.color, flexShrink: 0 }} />
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.02em" }}>
-            {board.name}
-          </h2>
-          <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>{board.description}</span>
         </div>
       )}
 
-      {/* ─── Onboarding Panel ─── */}
-      <OnboardingPanel boardId={boardId} />
+      {/* ─── Team Slide-Out Panel ─── */}
+      {showTeamPanel && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setShowTeamPanel(false)}
+            style={{
+              position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)",
+              backdropFilter: "blur(4px)", zIndex: 300,
+              animation: "fadeIn 0.2s ease",
+            }}
+          />
+          {/* Panel */}
+          <div style={{
+            position: "fixed", top: 0, right: 0, bottom: 0, width: "min(520px, 90vw)",
+            background: "#fff", zIndex: 301, display: "flex", flexDirection: "column",
+            boxShadow: "-8px 0 30px rgba(0,0,0,0.12)",
+            animation: "slideInRight 0.3s cubic-bezier(0.4,0,0.2,1)",
+          }}>
+            {/* Panel Header */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "20px 24px", borderBottom: "1px solid #f1f5f9", flexShrink: 0,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  background: "linear-gradient(135deg, #e0e7ff, #ede9fe)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Users2 size={20} color="#4f46e5" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", margin: 0 }}>Team Members</h3>
+                  <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>{board.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTeamPanel(false)}
+                style={{
+                  width: 36, height: 36, borderRadius: 10, border: "1px solid #f1f5f9",
+                  background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "#64748b", transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.color = "#0f172a"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.color = "#64748b"; }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            {/* Panel Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }} className="custom-scrollbar">
+              <OnboardingPanel boardId={boardId} />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ─── Employee Header (Headless Mode) ─── */}
       {isEmployee && (
@@ -446,8 +528,8 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
       </div>
 
       {/* ─── Board ─── */}
-      <div style={{ flex: 1, overflowX: "auto", overflowY: "hidden", paddingBottom: 8 }} className="custom-scrollbar">
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns.length}, minmax(300px, 1fr))`, gap: 12, height: "100%" }}>
+      <div style={{ flex: 1, overflowX: "auto", overflowY: "visible", paddingBottom: 16 }} className="custom-scrollbar">
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns.length}, minmax(300px, 1fr))`, gap: 12, minHeight: 500 }}>
         {columns.map((col) => {
           const filtered = col.tasks
             .filter(t => filterTask(t, col.id))
@@ -499,8 +581,6 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                   onClick={() => setSelectedTask(task as Task)}
                   onDragStart={(e) => handleDragStart(e, task.id, col.id)}
                   onDragEnd={handleDragEnd}
-                  onMouseEnter={() => setHoveredTaskId(task.id)}
-                  onMouseLeave={() => setHoveredTaskId(null)}
                   style={{
                     background: "#fff",
                     borderRadius: 6,
@@ -536,13 +616,14 @@ export default function KanbanView({ boardId, onBack }: { boardId: string; onBac
                       justifyContent: "center",
                       transition: "all 0.15s ease-in-out",
                       opacity: hoveredTaskId === task.id ? 1 : 0,
-                      visibility: hoveredTaskId === task.id ? "visible" : "hidden",
                     }}
                     onMouseEnter={(e) => {
+                      setHoveredTaskId(task.id);
                       e.currentTarget.style.color = "#ef4444";
                       e.currentTarget.style.background = "#fee2e2";
                     }}
                     onMouseLeave={(e) => {
+                      setHoveredTaskId(null);
                       e.currentTarget.style.color = "#cbd5e1";
                       e.currentTarget.style.background = "none";
                     }}

@@ -23,6 +23,32 @@ async function main() {
     },
   });
 
+  // Admin: Sam
+  const sam = await prisma.systemUser.upsert({
+    where: { username: "sam@rudratic.com" },
+    update: {},
+    create: {
+      name: "Sam",
+      username: "sam@rudratic.com",
+      password: "Swot@12345",
+      role: "Admin",
+      department: "Management",
+    },
+  });
+
+  // Admin: Marx
+  const marx = await prisma.systemUser.upsert({
+    where: { username: "marx.rudratic@gmail.com" },
+    update: {},
+    create: {
+      name: "Marx",
+      username: "marx.rudratic@gmail.com",
+      password: "Swot@12345",
+      role: "Admin",
+      department: "Management",
+    },
+  });
+
   // Check if we already have boards
   const existingBoards = await prisma.board.count();
   if (existingBoards > 0) {
